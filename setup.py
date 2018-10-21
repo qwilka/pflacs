@@ -19,12 +19,14 @@ setup(
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
-        'Operating System :: POSIX :: Linux',
         'Topic :: Scientific/Engineering',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
     ],
     keywords='science engineering computational productivity',
-    packages=find_packages(exclude=['docs']),
+    packages=find_packages(exclude=['docs', 'examples']),
     python_requires='>=3.6',
+    install_requires=[
+        "vntree",
+    ],
 )
