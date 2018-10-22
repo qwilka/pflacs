@@ -12,13 +12,13 @@ def sub_xy(x, y):
 
 basecase = Loadcase("Base case", params={"a":10, "b":20, "c":30},
                 data={"description": "This is the base-case loadcase."})
-basecase.import_function(add_abc)
+basecase.plugin_func(add_abc)
 
 para1 = Loadcase("Parameter study 1", parent=basecase,
                 data={"description": ("This is the 1st parameter study "
                 "loadcase, it is effectively the same as the base-case." )
                 })
-para1.import_function(sub_xy, argmap={"x": "a", "y":"b"})
+para1.plugin_func(sub_xy, argmap={"x": "a", "y":"b"})
 
 para2 = Loadcase("Parameter study 2", parent=basecase,
                 params={"a":-20.8},

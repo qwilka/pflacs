@@ -24,7 +24,7 @@ def pf(age, date, name="NO NAME", address=None):
 
 rootnode = Loadcase("root LC")
 rootnode.import_params_pyfile("pars.py")
-rootnode.import_function(pf)
+rootnode.plugin_func(pf)
 
 rootnode.add_param("date", 1988)
 rootnode.pf(88, name=22) 
@@ -40,7 +40,7 @@ import math
 def math_sqrt(x):                                       
    return math.sqrt(x)
 
-rootnode.import_function(math_sqrt, argmap={"x": "xxx"})
+rootnode.plugin_func(math_sqrt, argmap={"x": "xxx"})
 c1.math_sqrt(xxx=4)
 c1.add_param("xxx", 77)
 c1.math_sqrt()

@@ -175,17 +175,22 @@ class Loadcase(Node):
         return self.import_params(loc_var)
 
     @classmethod
-    def import_function(cls, function, argmap=None):
-        """Class method for importing a function into a class. """
-        logger.info("Loadcase.import_function importing {} into {}.".format(function.__name__, cls))
+    def plugin_func(cls, func, argmap=None, newname=None):
+        """Patch a function into «Loadcase» class as an instance bound method.
+        """
+        logger.info("%s.plugin_func: patching function «%s»." % (cls.__name__, func.__name__))
         # test if «function» is valid for Pflacs:
         try:
-            _sig = inspect.signature(function)
+            _sig = inspect.signature(func)
         except (ValueError, TypeError) as err:
-            logger.error("LoadcaseNode.import_function: function «%s» is not valid for Pflacs: %s" % (function, err))
+            logger.error("%s.plugin_func: function «%s» is not valid for Pflacs: %s" % (cls.__name__, func.__name__, err))
             return False
-        setattr(cls, function.__name__, Function(function, argmap=argmap))
-        functools.update_wrapper(getattr(cls, function.__name__), function)
+        if newname:
+            _methodname = newname
+        else:
+            _methodname = func.__name__
+        setattr(cls, _methodname, Function(func, argmap=argmap))
+        functools.update_wrapper(getattr(cls, _methodname), func)
         return True
 
 
