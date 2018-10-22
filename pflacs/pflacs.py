@@ -1,26 +1,26 @@
 """
 Copyright © 2018 Stephen McEntee
 Licensed under the MIT license. 
-See «vn-tree» LICENSE file for details:
+See «pflacs» LICENSE file for details:
 https://github.com/qwilka/pflacs/blob/master/LICENSE
 """
-from types import MethodType, ModuleType
+from types import ModuleType  # MethodType
 import functools
 import inspect
 import copy
-import sys
-import os
-import string
-import ast
+#import sys
+#import os
+#import string
+#import ast
 import re
 import logging
-import time
+#import time
 #from traceback import extract_stack
 logger = logging.getLogger(__name__)
 
-from vntree import Node, TreeAttr
+from vntree import Node    #, TreeAttr
 
-valid_identifier = re.compile(r"^[^\d\W]\w*$", re.UNICODE)
+#valid_identifier = re.compile(r"^[^\d\W]\w*$", re.UNICODE)
 #re.compile(r'^_*[a-zA-Z][_0-9a-zA-Z]*$')
 #[_a-zA-Z]\w*
 
