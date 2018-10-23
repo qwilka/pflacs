@@ -29,7 +29,7 @@ logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
 
 class Parameter:
     """NOTE this class is not related to Python's inspect.Parameter """
-    def __init__(self, name=None):
+    def __init__(self, name):
         logger.debug("Parameter.__init__ «name» {}".format(name, ))
         self.name = name
     def __get__(self, instance, owner):
@@ -40,9 +40,12 @@ class Parameter:
                 logger.debug("Parameter.__get__ «instance.parent» {}".format(instance.parent, ))
                 _param_val = instance.parent.data["params"].get(self.name, False)
         elif owner:
-            _param_val = owner.data["params"].get(self.name, False)
-        else:
-            _param_val = False
+            #_param_val = owner.data["params"].get(self.name, False)
+            #_param_val = getattr(owner, self.name)
+            _param_val = None
+        #     print("owner=", owner)
+        # else:
+        #     _param_val = False
         return _param_val
     def __set__(self, instance, value):
         if instance:
