@@ -6,6 +6,7 @@ https://github.com/qwilka/pflacs/blob/master/LICENSE
 """
 from types import ModuleType  # MethodType
 import functools
+import importlib
 import inspect
 import copy
 #import sys
@@ -16,6 +17,7 @@ import re
 import logging
 #import time
 #from traceback import extract_stack
+import types
 logger = logging.getLogger(__name__)
 
 from vntree import Node    #, TreeAttr
@@ -125,9 +127,9 @@ class Loadcase(Node):
     #params = {}
     #XX = Parameter2()
 
-    def __init__(self, name, parent=None, params=None, pyfile=None,
+    def __init__(self, name=None, parent=None, params=None, pyfile=None,
                 data=None, treedict=None):
-        super().__init__(name, parent, data)
+        super().__init__(name, parent, data, treedict)
         #self.set_data("params", value={})
         if "params" in self.data and isinstance(self.data["params"], dict):
             _pars = copy.deepcopy(self.data["params"])
@@ -137,7 +139,14 @@ class Loadcase(Node):
         self.data["params"] =  {}
         if params and isinstance(params, dict):
             self.import_params(params)
-        
+        if "plugins" in self.data:
+            _plist = copy.copy(self.data["plugins"])
+        else:
+            _plist = None
+        self.data["plugins"] =  []
+        if _plist:
+            for _plug in _plist:
+                self.plugin_func(*_plug)
         # else:
         #     self.data.params = {}
         if pyfile:
@@ -177,23 +186,57 @@ class Loadcase(Node):
             return False
         return self.import_params(loc_var)
 
-    @classmethod
-    def plugin_func(cls, func, argmap=None, newname=None):
+    # @classmethod
+    # def plugin_func(cls, func, argmap=None, newname=None):
+    #     """Patch a function into «Loadcase» class as an instance bound method.
+    #     """
+    #     logger.info("%s.plugin_func: patching function «%s»." % (cls.__name__, func.__name__))
+    #     # test if «function» is valid for Pflacs:
+    #     try:
+    #         _sig = inspect.signature(func)
+    #     except (ValueError, TypeError) as err:
+    #         logger.error("%s.plugin_func: function «%s» is not valid for Pflacs: %s" % (cls.__name__, func.__name__, err))
+    #         return False
+    #     if newname:
+    #         _methodname = newname
+    #     else:
+    #         _methodname = func.__name__
+    #     setattr(cls, _methodname, Function(func, argmap=argmap))
+    #     functools.update_wrapper(getattr(cls, _methodname), func)
+    #     return True
+
+    def plugin_func(self, func, module=None, argmap=None, newname=None):
         """Patch a function into «Loadcase» class as an instance bound method.
         """
-        logger.info("%s.plugin_func: patching function «%s»." % (cls.__name__, func.__name__))
+        logger.info("%s.plugin_func: patching function «%s»." % (self.__class__.__name__, func))
         # test if «function» is valid for Pflacs:
+        err = "arg «func» must be str or function; «module» must be str."
+        if isinstance(func, str):
+            if module and isinstance(module, str):
+                _mod = importlib.import_module(module)
+                _function = getattr(_mod, func)
+            else:
+                _function = locals().get(func)
+        elif isinstance(func, types.FunctionType):
+            _function = func
+        else:
+            _function = None
+            #err = "arg «func» type must be str or function."
+        if _function is None:
+            logger.error("%s.plugin_func: args «func»=«%s» «module»=«%s» not valid: %s" % (self.__class__.__name__, func,module, err))
+            return False
         try:
-            _sig = inspect.signature(func)
+            _sig = inspect.signature(_function)
         except (ValueError, TypeError) as err:
-            logger.error("%s.plugin_func: function «%s» is not valid for Pflacs: %s" % (cls.__name__, func.__name__, err))
+            logger.error("%s.plugin_func: function «%s» is not valid for Pflacs: %s" % (self.__class__.__name__, _function.__name__, err))
             return False
         if newname:
             _methodname = newname
         else:
-            _methodname = func.__name__
-        setattr(cls, _methodname, Function(func, argmap=argmap))
-        functools.update_wrapper(getattr(cls, _methodname), func)
+            _methodname = _function.__name__
+        setattr(self.__class__, _methodname, Function(_function, argmap=argmap))
+        functools.update_wrapper(getattr(self.__class__, _methodname), _function)
+        self.data["plugins"].append( (_function.__name__, module, argmap, newname) )
         return True
 
 
