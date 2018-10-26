@@ -37,10 +37,10 @@ class Parameter:
     def __get__(self, instance, owner):
         logger.debug("Parameter.__get__ «instance» {}, «owner» {}".format(instance, owner))
         if instance:
-            _param_val = instance.data["params"].get(self.name, False)
-            if not _param_val and instance.parent:
+            _param_val = instance.data["params"].get(self.name, None)
+            if _param_val is None and instance.parent:
                 logger.debug("Parameter.__get__ «instance.parent» {}".format(instance.parent, ))
-                _param_val = instance.parent.data["params"].get(self.name, False)
+                _param_val = instance.parent.data["params"].get(self.name, None)
         elif owner:
             #_param_val = owner.data["params"].get(self.name, False)
             #_param_val = getattr(owner, self.name)
@@ -225,6 +225,11 @@ class Loadcase(Node):
         if _function is None:
             logger.error("%s.plugin_func: args «func»=«%s» «module»=«%s» not valid: %s" % (self.__class__.__name__, func,module, err))
             return False
+        _argmp = {}
+        if _function.__annotations__:
+            _argmp = copy.copy(_function.__annotations__)
+        if argmap and isinstance(argmap, dict):
+            _argmp.update(argmap)
         try:
             _sig = inspect.signature(_function)
         except (ValueError, TypeError) as err:
@@ -234,9 +239,9 @@ class Loadcase(Node):
             _methodname = newname
         else:
             _methodname = _function.__name__
-        setattr(self.__class__, _methodname, Function(_function, argmap=argmap))
+        setattr(self.__class__, _methodname, Function(_function, argmap=_argmp))
         functools.update_wrapper(getattr(self.__class__, _methodname), _function)
-        self.data["plugins"].append( (_function.__name__, module, argmap, newname) )
+        self.data["plugins"].append( (_function.__name__, module, _argmp, newname) )
         return True
 
 
