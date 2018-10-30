@@ -45,7 +45,8 @@ c1.math_sqrt(xxx=4)
 c1.add_param("xxx", 77)
 c1.math_sqrt()
 
-c2 = Loadcase("2nd child LC", rootnode, params={"age":998}, data={"testing":1234})
+c2 = Loadcase("2nd child LC", rootnode, parameters={"age":998}, data={"testing":{"value":12345}})
 
-c3 = Loadcase("3rd child LC", rootnode, data={"params":{"age":7654}, "dummy":1234})
+c3 = Loadcase("3rd child LC", rootnode, data={"params":{"age":{"value":7654}}, "dummy":{"value":4321}})
 
+g1 = Loadcase("1st grandchild", c2)

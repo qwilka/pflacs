@@ -29,40 +29,69 @@ from vntree import Node    #, TreeAttr
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
 
 
+
 class Parameter:
     """NOTE this class is not related to Python's inspect.Parameter """
-    def __init__(self, name):
-        logger.debug("Parameter.__init__ «name» {}".format(name, ))
+    def __init__(self, name, desc=""):
         self.name = name
+        self.desc = desc
     def __get__(self, instance, owner):
-        logger.debug("Parameter.__get__ «instance» {}, «owner» {}".format(instance, owner))
         if instance:
-            _param_val = instance.data["params"].get(self.name, None)
-            if _param_val is None and instance.parent:
-                logger.debug("Parameter.__get__ «instance.parent» {}".format(instance.parent, ))
-                _param_val = instance.parent.data["params"].get(self.name, None)
+            #_val = instance.data["params"].get(self.name, None)
+            _val = instance.data["params"].get(self.name, None)
+            if _val and isinstance(_val, dict) and "value" in _val:
+                _val = _val["value"] 
+            if _val is None and instance.parent:
+                _val = getattr(instance.parent, self.name)
         elif owner:
-            #_param_val = owner.data["params"].get(self.name, False)
-            #_param_val = getattr(owner, self.name)
-            _param_val = None
-        #     print("owner=", owner)
-        # else:
-        #     _param_val = False
-        return _param_val
+            _val = None 
+        return _val
     def __set__(self, instance, value):
-        if instance:
-            logger.debug("Parameter.__set__ «name» {} «value» {} set on «instance» {}.".format(self.name, value, instance))
-            instance.data["params"][self.name] = value
-        else:
-            logger.debug("Parameter.__set__ «name» {} «value» {} called at class level.".format(self.name, value))
+        if self.name not in instance.data["params"]:
+            instance.data["params"][self.name] = {}
+            instance.data["params"][self.name]["desc"] = self.desc
+        instance.data["params"][self.name]["value"] = value
     def __delete__(self, instance):
-        # don't delete at class level, in case another instance is using this attribute
-        #_param_val = instance.params.pop(self.name)
         del instance.data["params"][self.name]
-        #delattr(instance, self.name)
-    def __set_name__(self, owner, name):
-        logger.debug("Parameter.__set_name__ «self» {} «owner» {} «name» {}".format(self, owner, name))
+    def __set_name__(self, owner, name):  # not required: this is only called for attributes defined when the class is created
         self.name = name
+
+
+# class Parameter:
+#     """NOTE this class is not related to Python's inspect.Parameter """
+#     def __init__(self, name, desc=""):
+#         logger.debug("Parameter.__init__ «name» {}".format(name, ))
+#         self.name = name
+#     def __get__(self, instance, owner):
+#         logger.debug("Parameter.__get__ «instance» {}, «owner» {}".format(instance, owner))
+#         if instance:
+#             _param_val = instance.data["params"].get(self.name, None)
+#             if _param_val is None and instance.parent:
+#                 logger.debug("Parameter.__get__ «instance.parent» {}".format(instance.parent, ))
+#                 _param_val = instance.parent.data["params"].get(self.name, None)
+#         elif owner:
+#             #_param_val = owner.data["params"].get(self.name, False)
+#             #_param_val = getattr(owner, self.name)
+#             _param_val = None
+#         #     print("owner=", owner)
+#         # else:
+#         #     _param_val = False
+#         return _param_val
+#     def __set__(self, instance, value):
+#         if instance:
+#             logger.debug("Parameter.__set__ «name» {} «value» {} set on «instance» {}.".format(self.name, value, instance))
+#             instance.data["params"][self.name] = value
+#         else:
+#             logger.debug("Parameter.__set__ «name» {} «value» {} called at class level.".format(self.name, value))
+#     def __delete__(self, instance):
+#         # don't delete at class level, in case another instance is using this attribute
+#         #_param_val = instance.params.pop(self.name)
+#         del instance.data["params"][self.name]
+#         #delattr(instance, self.name)
+#     def __set_name__(self, owner, name):  # not required: this is only called for attributes defined when the class is created
+#         logger.debug("Parameter.__set_name__ «self» {} «owner» {} «name» {}".format(self, owner, name))
+#         self.name = name
+
 
 
 class Function:
@@ -124,13 +153,18 @@ class Function:
 
 
 class Loadcase(Node):
-    #params = {}
-    #XX = Parameter2()
 
-    def __init__(self, name=None, parent=None, params=None, pyfile=None,
+    def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None):
         super().__init__(name, parent, data, treedict)
         #self.set_data("params", value={})
+        params = {}
+        if parameters and isinstance(parameters, dict):
+            for _k, _v in parameters.items():
+                if isinstance(_v, dict) and "value" in _v:
+                    params[_k] = _v
+                else:
+                    params[_k] = {"value": _v}
         if "params" in self.data and isinstance(self.data["params"], dict):
             _pars = copy.deepcopy(self.data["params"])
             if params and isinstance(params, dict):
@@ -152,11 +186,11 @@ class Loadcase(Node):
         if pyfile:
             self.import_params_pyfile(pyfile)
 
-    def add_param(self, name, value=None):
+    def add_param(self, name, value=None, desc="«add_param»", **kwargs):
         if name in self.data["params"]:
             logger.debug("add_param: {} is already param of «{}»!".format(name, self.name))
         else:
-            setattr(self.__class__, name, Parameter(name))
+            setattr(self.__class__, name, Parameter(name, desc))
             setattr(self, name, value)
         return True
 
@@ -171,10 +205,10 @@ class Loadcase(Node):
 
 
     def import_params(self, params):
-        for _key, _val in params.items():
-            if callable(_val) or isinstance(_val, ModuleType):
-                continue
-            self.add_param(_key, _val)
+        for _key, _pdict in params.items():
+            # if callable(_val) or isinstance(_val, ModuleType):
+            #     continue
+            self.add_param(name=_key, **_pdict)
         return True
 
     def import_params_pyfile(self, pyfile):
@@ -184,7 +218,13 @@ class Loadcase(Node):
         except Exception as err:
             logger.error("LoadcaseNode.import_params_pyfile: cannot import parameters from file %s; %s" % (pyfile, err))
             return False
-        return self.import_params(loc_var)
+        #return self.import_params(loc_var)
+        for _key, _val in loc_var.items():
+            if callable(_val) or isinstance(_val, ModuleType):
+                continue
+            self.add_param(_key, _val)
+        return True
+
 
     # @classmethod
     # def plugin_func(cls, func, argmap=None, newname=None):
