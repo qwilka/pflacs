@@ -106,9 +106,11 @@ class Function:
         else:
             self.argmap = {}
         self._instance = None
+        #self._owner = None
     def __get__(self, instance, owner):
         logger.debug("Function.__get__ «instance» {}, «owner» {}".format(instance, owner))
         self._instance = instance
+        #self._owner = owner
         return self
     def __call__(self, *args, **kwargs):
         #_xkwargs = {}
@@ -148,6 +150,8 @@ class Function:
                     _argname = "missing parameter «{}»".format(_argname)
             logger.error("Function.__call__: function «%s».«%s»; %s; (original function error: %s)" % (self._instance, self.name, _argname, err))
             return False
+        #print(self._instance, _bound)
+        self._instance._boundargs = _bound
         return self._func(*_bound.args, **_bound.kwargs)
 
 
