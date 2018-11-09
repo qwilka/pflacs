@@ -289,6 +289,43 @@ class Loadcase(Node):
         return True
 
 
+class CallNode(Loadcase):
+
+    def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
+                data=None, treedict=None, callfunc=None):
+        super().__init__(name, parent, data, treedict)
+        self._callfunc = None
+        if callfunc:
+            self.set_callfunc(callfunc)
+
+
+    def __call__(self, result_child=False, *args, **kwargs):
+        if not self._callfunc:
+            return None
+        _retV = self._callfunc(*args, **kwargs)
+        # if result_child:
+        #     self.add_child(ResultNode())
+        return _retV
+
+    def set_callfunc(self, callfunc):
+        _func = None
+        if isinstance(callfunc, str) and hasattr(self, callfunc):
+            _func = getattr(self, callfunc)
+        elif callable(callfunc) and hasattr(callfunc, "__name__") and hasattr(self, callfunc.__name__):
+            _func = getattr(self, callfunc.__name__)
+        # if isinstance(callfunc_name, str) and hasattr(self, callfunc_name):
+        #     _func = getattr(self, callfunc_name)
+        if not _func:
+            logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
+        self._callfunc = _func
+
+
+class ResultNode(Loadcase):
+
+    def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
+                data=None, treedict=None):
+        super().__init__(name, parent, data, treedict)
+
 
 if __name__ == "__main__":
     pass
