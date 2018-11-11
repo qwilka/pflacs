@@ -4,23 +4,23 @@ Licensed under the MIT license.
 See «pflacs» LICENSE file for details:
 https://github.com/qwilka/pflacs/blob/master/LICENSE
 """
-from types import ModuleType  # MethodType
+import collections
 import functools
 import importlib
 import inspect
 import copy
-#import sys
 #import os
 #import string
 #import ast
 import re
 import logging
+import sys
 #import time
 #from traceback import extract_stack
 import types
 logger = logging.getLogger(__name__)
 
-from vntree import Node    #, TreeAttr
+from vntree import Node, TreeAttr
 
 #valid_identifier = re.compile(r"^[^\d\W]\w*$", re.UNICODE)
 #re.compile(r'^_*[a-zA-Z][_0-9a-zA-Z]*$')
@@ -102,9 +102,9 @@ class Function:
         # if not isinstance(argmap, (dict, None)):
         #     raise TypeError('Function: argument «argmap» not correctly specified.')
         if isinstance(argmap, dict):
-            self.argmap = argmap
+            self._argmap = argmap
         else:
-            self.argmap = {}
+            self._argmap = {}
         self._instance = None
         #self._owner = None
     def __get__(self, instance, owner):
@@ -120,14 +120,14 @@ class Function:
             logger.debug("Function.__call__: function «%s».«%s»; parameter name «%s»" % (self._instance, self.name, _para.name))
             if ii<len(args):
                 continue
-            if _para.name in self.argmap and self.argmap[_para.name] in kwargs:
-                _parval = _xkwargs.pop(self.argmap[_para.name])
+            if _para.name in self._argmap and self._argmap[_para.name] in kwargs:
+                _parval = _xkwargs.pop(self._argmap[_para.name])
                 _xkwargs[_para.name] = _parval
             elif _para.name in kwargs:
                 logger.debug("Function.__call__: WARNING «%s».«%s»; parameter name «%s» is keyword argument in original function «%s» (binding nonetheless)." % (self._instance, self.name, _para.name, self._func.__name__))
                 continue
-            if self.argmap and _para.name in self.argmap.keys():
-                _inst_param = self.argmap[_para.name]
+            if self._argmap and _para.name in self._argmap.keys():
+                _inst_param = self._argmap[_para.name]
             else:
                 _inst_param = _para.name
             # if _inst_param in self._instance.params:
@@ -145,18 +145,20 @@ class Function:
             _mat = re.search(r"\'(\w+)\'\s*$", str(err))
             if _mat:
                 _argname = _mat.groups()[0]
-                if _argname in self.argmap:
-                    _argname = self.argmap.get(_argname)
+                if _argname in self._argmap:
+                    _argname = self._argmap.get(_argname)
                     _argname = "missing parameter «{}»".format(_argname)
             logger.error("Function.__call__: function «%s».«%s»; %s; (original function error: %s)" % (self._instance, self.name, _argname, err))
             return False
         #print(self._instance, _bound)
-        self._instance._boundargs = _bound
+        #self._instance._boundargs = _bound
+        self._instance._arguments = copy.deepcopy(_bound.arguments)
         return self._func(*_bound.args, **_bound.kwargs)
 
 
 
 class Loadcase(Node):
+    _clsname = TreeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None):
@@ -189,6 +191,9 @@ class Loadcase(Node):
         #     self.data.params = {}
         if pyfile:
             self.import_params_pyfile(pyfile)
+        self._boundargs = None #  self._boundargs is set by Function.__call__
+        self._clsname = self.__class__.__name__
+
 
     def add_param(self, name, value=None, desc="«add_param»", **kwargs):
         if name in self.data["params"]:
@@ -220,11 +225,11 @@ class Loadcase(Node):
         try:
             exec(compile(open(pyfile).read(), pyfile, 'exec'), gbl_var, loc_var)
         except Exception as err:
-            logger.error("LoadcaseNode.import_params_pyfile: cannot import parameters from file %s; %s" % (pyfile, err))
+            logger.error("%s.import_params_pyfile: cannot import parameters from file %s; %s" % (self.__class__.__name__, pyfile, err))
             return False
         #return self.import_params(loc_var)
         for _key, _val in loc_var.items():
-            if callable(_val) or isinstance(_val, ModuleType):
+            if callable(_val) or isinstance(_val, types.ModuleType):
                 continue
             self.add_param(_key, _val)
         return True
@@ -289,35 +294,75 @@ class Loadcase(Node):
         return True
 
 
+    def from_treedict(self, treedict):
+        if "data" in treedict:
+            self.data = collections.defaultdict(dict, treedict["data"])
+        for key, val in treedict.items():
+            if key in ["parent", "childs", "data"]:
+                continue
+            setattr(self, key, val)
+        if "childs" in treedict.keys():
+            for _childdict in treedict["childs"]:
+                #self.childs.append( self.__class__(parent=self, treedict=_childdict) )
+                # https://stackoverflow.com/questions/17959996/get-python-class-object-from-class-name-string-in-the-same-module
+                if "_clsname" in _childdict["data"]:
+                    _nodecls = getattr(sys.modules[__name__], _childdict["data"]["_clsname"])
+                    _nodecls(parent=self, treedict=_childdict)
+                else:
+                    self.__class__(parent=self, treedict=_childdict)
+
+
+
 class CallNode(Loadcase):
+    _return = TreeAttr()
+    _arguments = TreeAttr()
+    _callfuncname = TreeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None, callfunc=None):
-        super().__init__(name, parent, data, treedict)
-        self._callfunc = None
+        super().__init__(name, parent, data=data, treedict=treedict)
+        #self._callfunc = None
+        #self._return = None
+        #self._arguments = None
         if callfunc:
             self.set_callfunc(callfunc)
+        ##self._clsname = self.__class__.__name__
 
+    # def __call__(self, add_child=False, *args, **kwargs):
+    #     if not self._callfunc:
+    #         return None
+    #     self._return = self._callfunc(*args, **kwargs)
+    #     #self._arguments = copy.deepcopy(self._callfunc._boundargs.arguments)
+    #     # if add_child:
+    #     #     self.add_child(ResultNode())
+    #     return self._return
 
-    def __call__(self, result_child=False, *args, **kwargs):
-        if not self._callfunc:
+    # def set_callfunc(self, callfunc):
+    #     _func = None
+    #     if isinstance(callfunc, str) and hasattr(self, callfunc):
+    #         _func = getattr(self, callfunc)
+    #     elif callable(callfunc) and hasattr(callfunc, "__name__") and hasattr(self, callfunc.__name__):
+    #         _func = getattr(self, callfunc.__name__)
+    #     # if isinstance(callfunc_name, str) and hasattr(self, callfunc_name):
+    #     #     _func = getattr(self, callfunc_name)
+    #     if not _func:
+    #         logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
+    #     self._callfunc = _func
+
+    def __call__(self, add_child=False, *args, **kwargs):
+        if not self._callfuncname:
             return None
-        _retV = self._callfunc(*args, **kwargs)
-        # if result_child:
-        #     self.add_child(ResultNode())
-        return _retV
+        _func = getattr(self, self._callfuncname)
+        self._return = _func(*args, **kwargs)
+        return self._return
 
     def set_callfunc(self, callfunc):
-        _func = None
         if isinstance(callfunc, str) and hasattr(self, callfunc):
-            _func = getattr(self, callfunc)
+            self._callfuncname = callfunc
         elif callable(callfunc) and hasattr(callfunc, "__name__") and hasattr(self, callfunc.__name__):
-            _func = getattr(self, callfunc.__name__)
-        # if isinstance(callfunc_name, str) and hasattr(self, callfunc_name):
-        #     _func = getattr(self, callfunc_name)
-        if not _func:
+            self._callfuncname = callfunc.__name__
+        else:
             logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
-        self._callfunc = _func
 
 
 class ResultNode(Loadcase):
