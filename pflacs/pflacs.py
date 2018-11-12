@@ -159,6 +159,7 @@ class Function:
 
 class Loadcase(Node):
     _clsname = TreeAttr()
+    desc = TreeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None):
@@ -191,7 +192,7 @@ class Loadcase(Node):
         #     self.data.params = {}
         if pyfile:
             self.import_params_pyfile(pyfile)
-        self._boundargs = None #  self._boundargs is set by Function.__call__
+        ##self._boundargs = None #  self._boundargs is set by Function.__call__
         self._clsname = self.__class__.__name__
 
 
@@ -303,9 +304,8 @@ class Loadcase(Node):
             setattr(self, key, val)
         if "childs" in treedict.keys():
             for _childdict in treedict["childs"]:
-                #self.childs.append( self.__class__(parent=self, treedict=_childdict) )
                 # https://stackoverflow.com/questions/17959996/get-python-class-object-from-class-name-string-in-the-same-module
-                if "_clsname" in _childdict["data"]:
+                if "_clsname" in _childdict["data"] and _childdict["data"]["_clsname"]:
                     _nodecls = getattr(sys.modules[__name__], _childdict["data"]["_clsname"])
                     _nodecls(parent=self, treedict=_childdict)
                 else:
@@ -320,7 +320,8 @@ class CallNode(Loadcase):
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None, callfunc=None):
-        super().__init__(name, parent, data=data, treedict=treedict)
+        super().__init__(name, parent, data=data, treedict=treedict,
+                        parameters=parameters)
         #self._callfunc = None
         #self._return = None
         #self._arguments = None
@@ -349,12 +350,21 @@ class CallNode(Loadcase):
     #         logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
     #     self._callfunc = _func
 
+    @property
+    def _callfunc(self):
+        return getattr(self, self._callfuncname, None)
+
+
     def __call__(self, add_child=False, *args, **kwargs):
-        if not self._callfuncname:
+        # if not self._callfuncname:
+        #     return None
+        # #_func = getattr(self, self._callfuncname)
+        # _func = self._callfunc
+        if self._callfunc is None:
             return None
-        _func = getattr(self, self._callfuncname)
-        self._return = _func(*args, **kwargs)
+        self._return = self._callfunc(*args, **kwargs)
         return self._return
+
 
     def set_callfunc(self, callfunc):
         if isinstance(callfunc, str) and hasattr(self, callfunc):
@@ -364,12 +374,30 @@ class CallNode(Loadcase):
         else:
             logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
 
+    def call_child(self, call=False, name=None, **kwargs):
+        if kwargs:
+            _parameters = dict(kwargs)
+        else:
+            _parameters = None
+        # if name is None:
+        #     name = "{} c{}".format(self._callfuncname, len(self.childs))
+        _nodedata = copy.deepcopy(self.data)
+        _nodedata["_arguments"] = None
+        _nodedata["_return"] = None
+        _nodedata["name"] = name
+        _child = self.__class__(parent=self, data=_nodedata, parameters=_parameters)
+        if call:
+            _child()
+        return _child
+    
 
-class ResultNode(Loadcase):
 
-    def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
-                data=None, treedict=None):
-        super().__init__(name, parent, data, treedict)
+
+# class ResultNode(Loadcase):
+
+#     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
+#                 data=None, treedict=None):
+#         super().__init__(name, parent, data, treedict)
 
 
 if __name__ == "__main__":
