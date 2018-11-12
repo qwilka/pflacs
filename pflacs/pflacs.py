@@ -22,12 +22,17 @@ logger = logging.getLogger(__name__)
 
 from vntree import Node, TreeAttr
 
-#valid_identifier = re.compile(r"^[^\d\W]\w*$", re.UNICODE)
-#re.compile(r'^_*[a-zA-Z][_0-9a-zA-Z]*$')
-#[_a-zA-Z]\w*
 
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
 
+import numpy as np
+
+try:
+    import pandas as pd
+    pandas_imported = True
+except:
+    logger.warning("pflacs cannot import external module «pandas».")
+    pandas_imported = False  
 
 
 class Parameter:
@@ -55,42 +60,6 @@ class Parameter:
         del instance.data["params"][self.name]
     def __set_name__(self, owner, name):  # not required: this is only called for attributes defined when the class is created
         self.name = name
-
-
-# class Parameter:
-#     """NOTE this class is not related to Python's inspect.Parameter """
-#     def __init__(self, name, desc=""):
-#         logger.debug("Parameter.__init__ «name» {}".format(name, ))
-#         self.name = name
-#     def __get__(self, instance, owner):
-#         logger.debug("Parameter.__get__ «instance» {}, «owner» {}".format(instance, owner))
-#         if instance:
-#             _param_val = instance.data["params"].get(self.name, None)
-#             if _param_val is None and instance.parent:
-#                 logger.debug("Parameter.__get__ «instance.parent» {}".format(instance.parent, ))
-#                 _param_val = instance.parent.data["params"].get(self.name, None)
-#         elif owner:
-#             #_param_val = owner.data["params"].get(self.name, False)
-#             #_param_val = getattr(owner, self.name)
-#             _param_val = None
-#         #     print("owner=", owner)
-#         # else:
-#         #     _param_val = False
-#         return _param_val
-#     def __set__(self, instance, value):
-#         if instance:
-#             logger.debug("Parameter.__set__ «name» {} «value» {} set on «instance» {}.".format(self.name, value, instance))
-#             instance.data["params"][self.name] = value
-#         else:
-#             logger.debug("Parameter.__set__ «name» {} «value» {} called at class level.".format(self.name, value))
-#     def __delete__(self, instance):
-#         # don't delete at class level, in case another instance is using this attribute
-#         #_param_val = instance.params.pop(self.name)
-#         del instance.data["params"][self.name]
-#         #delattr(instance, self.name)
-#     def __set_name__(self, owner, name):  # not required: this is only called for attributes defined when the class is created
-#         logger.debug("Parameter.__set_name__ «self» {} «owner» {} «name» {}".format(self, owner, name))
-#         self.name = name
 
 
 
@@ -188,11 +157,8 @@ class Loadcase(Node):
         if _plist:
             for _plug in _plist:
                 self.plugin_func(*_plug)
-        # else:
-        #     self.data.params = {}
-        if pyfile:
-            self.import_params_pyfile(pyfile)
-        ##self._boundargs = None #  self._boundargs is set by Function.__call__
+        # if pyfile:
+        #     self.import_params_pyfile(pyfile)
         self._clsname = self.__class__.__name__
 
 
@@ -221,39 +187,21 @@ class Loadcase(Node):
             self.add_param(name=_key, **_pdict)
         return True
 
-    def import_params_pyfile(self, pyfile):
-        gbl_var={}; loc_var={}
-        try:
-            exec(compile(open(pyfile).read(), pyfile, 'exec'), gbl_var, loc_var)
-        except Exception as err:
-            logger.error("%s.import_params_pyfile: cannot import parameters from file %s; %s" % (self.__class__.__name__, pyfile, err))
-            return False
-        #return self.import_params(loc_var)
-        for _key, _val in loc_var.items():
-            if callable(_val) or isinstance(_val, types.ModuleType):
-                continue
-            self.add_param(_key, _val)
-        return True
-
-
-    # @classmethod
-    # def plugin_func(cls, func, argmap=None, newname=None):
-    #     """Patch a function into «Loadcase» class as an instance bound method.
-    #     """
-    #     logger.info("%s.plugin_func: patching function «%s»." % (cls.__name__, func.__name__))
-    #     # test if «function» is valid for Pflacs:
+    # def import_params_pyfile(self, pyfile):
+    #     gbl_var={}; loc_var={}
     #     try:
-    #         _sig = inspect.signature(func)
-    #     except (ValueError, TypeError) as err:
-    #         logger.error("%s.plugin_func: function «%s» is not valid for Pflacs: %s" % (cls.__name__, func.__name__, err))
+    #         exec(compile(open(pyfile).read(), pyfile, 'exec'), gbl_var, loc_var)
+    #     except Exception as err:
+    #         logger.error("%s.import_params_pyfile: cannot import parameters from file %s; %s" % (self.__class__.__name__, pyfile, err))
     #         return False
-    #     if newname:
-    #         _methodname = newname
-    #     else:
-    #         _methodname = func.__name__
-    #     setattr(cls, _methodname, Function(func, argmap=argmap))
-    #     functools.update_wrapper(getattr(cls, _methodname), func)
+    #     #return self.import_params(loc_var)
+    #     for _key, _val in loc_var.items():
+    #         if callable(_val) or isinstance(_val, types.ModuleType):
+    #             continue
+    #         self.add_param(_key, _val)
     #     return True
+
+
 
     def plugin_func(self, func, module=None, argmap=None, newname=None):
         """Patch a function into «Loadcase» class as an instance bound method.
@@ -329,27 +277,6 @@ class CallNode(Loadcase):
             self.set_callfunc(callfunc)
         ##self._clsname = self.__class__.__name__
 
-    # def __call__(self, add_child=False, *args, **kwargs):
-    #     if not self._callfunc:
-    #         return None
-    #     self._return = self._callfunc(*args, **kwargs)
-    #     #self._arguments = copy.deepcopy(self._callfunc._boundargs.arguments)
-    #     # if add_child:
-    #     #     self.add_child(ResultNode())
-    #     return self._return
-
-    # def set_callfunc(self, callfunc):
-    #     _func = None
-    #     if isinstance(callfunc, str) and hasattr(self, callfunc):
-    #         _func = getattr(self, callfunc)
-    #     elif callable(callfunc) and hasattr(callfunc, "__name__") and hasattr(self, callfunc.__name__):
-    #         _func = getattr(self, callfunc.__name__)
-    #     # if isinstance(callfunc_name, str) and hasattr(self, callfunc_name):
-    #     #     _func = getattr(self, callfunc_name)
-    #     if not _func:
-    #         logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
-    #     self._callfunc = _func
-
     @property
     def _callfunc(self):
         return getattr(self, self._callfuncname, None)
@@ -389,7 +316,54 @@ class CallNode(Loadcase):
         if call:
             _child()
         return _child
+
+    def to_df(self, norepeat=False):
+        if (not pandas_imported or (self._callfuncname is None) 
+            or (self._return is None) ):
+            return None
+        if "return" in self._callfunc._argmap:
+            _ident = self._callfunc._argmap["return"]
+        else:
+            _ident = self._callfunc.__name__
+        if isinstance(self._return, dict):
+            _df = pd.DataFrame()
+            # for _k, _v in self._return.items():
+            #     if isinstance(_v, np.ndarray):
+            #         if len(_v) == len(_df):
+            #             _df.insert(0, _k, _v)
+            #     else:
+            #         _df.insert(0, _k, [_v]*len(_df))
+            for _k, _v in self._return.items():
+                if isinstance(_v, np.ndarray):
+                    _df.insert(len(_df.columns), _k, _v)
+            for _k, _v in self._return.items():
+                if _k in list(_df.columns.values):
+                    continue
+                _df.insert(len(_df.columns), _k, [_v]*len(_df))
+        elif isinstance(self._return, np.ndarray):
+            _df = pd.DataFrame(self._return, columns=[_ident])
+        elif isinstance(self._return, (list, tuple)):
+            _df = pd.DataFrame([self._return], columns=[_ident+str(i) for i in range(len(self._return))])
+        else:
+            _df = pd.DataFrame([self._return], columns=[_ident])
+        for _k, _v in reversed(self._arguments.items()):
+            if _k in list(_df.columns.values):
+                continue
+            if isinstance(_v, np.ndarray):
+                if len(_v) == len(_df):
+                    #self._df[_k] = _v
+                    _df.insert(0, _k, _v)
+            else:
+                _df.insert(0, _k, [_v]*len(_df))
+        # https://stackoverflow.com/questions/20209600/pandas-dataframe-remove-constant-column
+        if norepeat and len(_df)>1:
+            _df = _df.loc[:, (_df != _df.iloc[0]).any()]
+        #self._df = _df
+        return _df
+
     
+
+
 
 
 
