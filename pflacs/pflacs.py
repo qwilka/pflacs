@@ -20,7 +20,7 @@ import sys
 import types
 logger = logging.getLogger(__name__)
 
-from vntree import Node, TreeAttr
+from vntree import Node, NodeAttr
 
 
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
@@ -127,8 +127,8 @@ class Function:
 
 
 class Loadcase(Node):
-    _clsname = TreeAttr()
-    desc = TreeAttr()
+    _clsname = NodeAttr()
+    desc = NodeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None):
@@ -262,9 +262,9 @@ class Loadcase(Node):
 
 
 class CallNode(Loadcase):
-    _return = TreeAttr()
-    _arguments = TreeAttr()
-    _callfuncname = TreeAttr()
+    _return = NodeAttr()
+    _arguments = NodeAttr()
+    _callfuncname = NodeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
                 data=None, treedict=None, callfunc=None):
@@ -273,6 +273,7 @@ class CallNode(Loadcase):
         #self._callfunc = None
         #self._return = None
         #self._arguments = None
+        self._df = None
         if callfunc:
             self.set_callfunc(callfunc)
         ##self._clsname = self.__class__.__name__
@@ -317,7 +318,7 @@ class CallNode(Loadcase):
             _child()
         return _child
 
-    def to_df(self, norepeat=False):
+    def to_df(self, norepeat=False, keep=False):
         if (not pandas_imported or (self._callfuncname is None) 
             or (self._return is None) ):
             return None
@@ -358,20 +359,27 @@ class CallNode(Loadcase):
         # https://stackoverflow.com/questions/20209600/pandas-dataframe-remove-constant-column
         if norepeat and len(_df)>1:
             _df = _df.loc[:, (_df != _df.iloc[0]).any()]
-        #self._df = _df
+        if keep:
+            self._df = _df
         return _df
 
+    def to_hdf(self, path=None, key=None, append=True):
+        if self._return is None:
+            logger.error("%s.to_hdf: node «%s» not called." % (self.__class__.__name__, self.name))
+            return None
+        if not self._df:
+            self.to_df(keep=True)
+        if key:
+            _key = key
+        else:
+            _key=self.nodepath
+        self._df.to_hdf(path, _key, format="table", data_columns=True,
+                        append=append, mode="a")
     
 
 
 
 
-
-# class ResultNode(Loadcase):
-
-#     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
-#                 data=None, treedict=None):
-#         super().__init__(name, parent, data, treedict)
 
 
 if __name__ == "__main__":
