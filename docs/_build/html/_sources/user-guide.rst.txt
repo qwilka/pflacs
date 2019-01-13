@@ -16,12 +16,12 @@ Creating Loadcase
 with Python code
 ^^^^^^^^^^^^^^^^
 
-The following code imports the `Node` class and creates a root (top-level) node:
+The following code imports the `Loadcase` class and creates a root (top-level) node:
 
 .. code-block:: python
 
-    from vntree import Node
-    rootnode = Node("root-node")
+    from pflacs import Loadcase
+    rootnode = Loadcase("root-node")
     print(f"The name of the root node is «{rootnode.name}»")
 
 

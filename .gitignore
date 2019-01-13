@@ -1,6 +1,4 @@
 .vscode/
-doctrees/
-.buildinfo
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -69,6 +67,8 @@ instance/
 
 # Sphinx documentation
 #docs/_build/
+doctrees/
+.buildinfo
 
 # PyBuilder
 target/

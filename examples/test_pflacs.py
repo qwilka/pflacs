@@ -1,4 +1,4 @@
-from pflacs import Loadcase, Parameter
+from pflacs import Premise, Parameter
 
 import logging
 
@@ -22,7 +22,7 @@ def pf(age, date, name="NO NAME", address=None):
 
 
 
-rootnode = Loadcase("root LC")
+rootnode = Premise("root LC")
 rootnode.import_params_pyfile("pars.py")
 rootnode.plugin_func(pf)
 
@@ -31,7 +31,7 @@ rootnode.pf(88, name=22)
 rootnode.add_param("age", 100)
 rootnode.pf()
 
-c1 = Loadcase("1st child LC", rootnode)
+c1 = Premise("1st child LC", rootnode)
 c1.pf(age=250)
 c1.pf()
 
@@ -45,8 +45,8 @@ c1.math_sqrt(xxx=4)
 c1.add_param("xxx", 77)
 c1.math_sqrt()
 
-c2 = Loadcase("2nd child LC", rootnode, parameters={"age":998}, data={"testing":{"value":12345}})
+c2 = Premise("2nd child LC", rootnode, parameters={"age":998}, data={"testing":{"value":12345}})
 
-c3 = Loadcase("3rd child LC", rootnode, data={"params":{"age":{"value":7654}}, "dummy":{"value":4321}})
+c3 = Premise("3rd child LC", rootnode, data={"params":{"age":{"value":7654}}, "dummy":{"value":4321}})
 
-g1 = Loadcase("1st grandchild", c2)
+g1 = Premise("1st grandchild", c2)

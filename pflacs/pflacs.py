@@ -160,7 +160,7 @@ class Function:
 
 
 
-class Loadcase(Node):
+class Premise(Node):
     """Class for creating pflacs nodes.
 
     :param name: node name
@@ -265,7 +265,7 @@ class Loadcase(Node):
 
 
     def plugin_func(self, func, module=None, argmap=None, newname=None):
-        """Patch a function into «Loadcase» class as an instance bound method.
+        """Patch a function into «Premise» class as an instance bound method.
         """
         logger.info("%s.plugin_func: patching function «%s»." % (self.__class__.__name__, func))
         # test if «function» is valid for Pflacs:
@@ -322,7 +322,7 @@ class Loadcase(Node):
 
 
 
-class CallNode(Loadcase):
+class CallNode(Premise):
     _return = NodeAttr()
     _arguments = NodeAttr()
     _callfuncname = NodeAttr()

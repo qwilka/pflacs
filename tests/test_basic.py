@@ -1,6 +1,6 @@
 import unittest
 
-from pflacs import Loadcase, Parameter
+from pflacs import Premise, Parameter
 
 
 def add_abc(a, b, c=0):
@@ -10,17 +10,17 @@ def sub_xy(x, y):
     return x - y
 
 
-basecase = Loadcase("Base case", params={"a":10, "b":20, "c":30},
+basecase = Premise("Base case", params={"a":10, "b":20, "c":30},
                 data={"description": "This is the base-case loadcase."})
 basecase.plugin_func(add_abc)
 
-para1 = Loadcase("Parameter study 1", parent=basecase,
+para1 = Premise("Parameter study 1", parent=basecase,
                 data={"description": ("This is the 1st parameter study "
                 "loadcase, it is effectively the same as the base-case." )
                 })
 para1.plugin_func(sub_xy, argmap={"x": "a", "y":"b"})
 
-para2 = Loadcase("Parameter study 2", parent=basecase,
+para2 = Premise("Parameter study 2", parent=basecase,
                 params={"a":-20.8},
                 data={"description": ("This is the 2nd parameter study "
                 "loadcase." )
