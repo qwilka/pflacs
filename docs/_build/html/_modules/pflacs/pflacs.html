@@ -1,0 +1,569 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pflacs.pflacs &#8212; pflacs  documentation</title>
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pflacs  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pflacs.pflacs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Copyright © 2018 Stephen McEntee</span>
+<span class="sd">Licensed under the MIT license. </span>
+<span class="sd">See «pflacs» LICENSE file for details:</span>
+<span class="sd">https://github.com/qwilka/pflacs/blob/master/LICENSE</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="c1">#import os</span>
+<span class="c1">#import string</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="c1">#import time</span>
+<span class="c1">#from traceback import extract_stack</span>
+<span class="kn">import</span> <span class="nn">types</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">vntree</span> <span class="k">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">NodeAttr</span><span class="p">,</span> <span class="n">TreeAttr</span>
+
+
+<span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;#### in pflacs.py: DEBUG this is a test  ####&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">tables</span> <span class="k">import</span> <span class="n">NaturalNameWarning</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">NaturalNameWarning</span><span class="p">)</span>  
+
+
+<span class="k">class</span> <span class="nc">Parameter</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;NOTE this class is not related to Python&#39;s inspect.Parameter &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="n">desc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_coord</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span><span class="p">:</span>
+            <span class="n">_val</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># if self.access_coord is None:</span>
+            <span class="c1">#     self.access_coord = instance._coord</span>
+            <span class="k">if</span> <span class="n">_val</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;value&quot;</span> <span class="ow">in</span> <span class="n">_val</span><span class="p">:</span>
+                <span class="n">_val</span> <span class="o">=</span> <span class="n">_val</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> 
+                <span class="c1"># print(&quot;Parameter in node: &quot;, instance._coord, &quot;accessed from: &quot;, self.access_coord)</span>
+                <span class="c1"># self.access_coord = None</span>
+            <span class="k">if</span> <span class="n">_val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">instance</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+                <span class="n">_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">owner</span><span class="p">:</span>
+            <span class="n">_val</span> <span class="o">=</span> <span class="kc">None</span> 
+        <span class="k">return</span> <span class="n">_val</span>
+    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]:</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">desc</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">__delete__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
+        <span class="k">del</span> <span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__set_name__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>  <span class="c1"># not required: this is only called for attributes defined when the class is created</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c1">#print(&quot;Parameter __set_name__ call: &quot;, self.name)</span>
+    
+
+
+
+<span class="k">class</span> <span class="nc">Function</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">argmap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="c1"># if not isinstance(argmap, (dict, None)):</span>
+        <span class="c1">#     raise TypeError(&#39;Function: argument «argmap» not correctly specified.&#39;)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argmap</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span> <span class="o">=</span> <span class="n">argmap</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">#self._owner = None</span>
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Function.__get__ «instance» </span><span class="si">{}</span><span class="s2">, «owner» </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="n">instance</span>
+        <span class="c1">#self._owner = owner</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1">#_xkwargs = {}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Function.__call__: function «</span><span class="si">%s</span><span class="s2">».«</span><span class="si">%s</span><span class="s2">»; args «</span><span class="si">%s</span><span class="s2">»; kwargs «</span><span class="si">%s</span><span class="s2">»&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">))</span>
+        <span class="n">_xkwargs</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="p">(</span><span class="n">_key</span><span class="p">,</span> <span class="n">_para</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Function.__call__: function «</span><span class="si">%s</span><span class="s2">».«</span><span class="si">%s</span><span class="s2">»; parameter name «</span><span class="si">%s</span><span class="s2">»&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">ii</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">_para</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="p">[</span><span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">_parval</span> <span class="o">=</span> <span class="n">_xkwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="p">[</span><span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+                <span class="n">_xkwargs</span><span class="p">[</span><span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parval</span>
+            <span class="k">elif</span> <span class="n">_para</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Function.__call__: WARNING «</span><span class="si">%s</span><span class="s2">».«</span><span class="si">%s</span><span class="s2">»; parameter name «</span><span class="si">%s</span><span class="s2">» is keyword argument in original function «</span><span class="si">%s</span><span class="s2">» (binding nonetheless).&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span> <span class="ow">and</span> <span class="n">_para</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">_inst_param</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="p">[</span><span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_inst_param</span> <span class="o">=</span> <span class="n">_para</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># if _inst_param in self._instance.params:</span>
+            <span class="c1">#     _xkwargs[_para.name] = self._instance.params[_inst_param]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">is_param</span><span class="p">(</span><span class="n">_inst_param</span><span class="p">):</span>
+                <span class="c1">#_xkwargs[_para.name] = self._instance.get_param(_inst_param)</span>
+                <span class="c1">#_xkwargs[_para.name] = self._instance.params.get(_inst_param)</span>
+                <span class="n">_xkwargs</span><span class="p">[</span><span class="n">_para</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="n">_inst_param</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Function.__call__: function «</span><span class="si">%s</span><span class="s2">».«</span><span class="si">%s</span><span class="s2">»; bind args: </span><span class="si">%s</span><span class="s2"> &amp; kwargs: </span><span class="si">%s</span><span class="s2">;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">_xkwargs</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1">#_bound = self._sig.bind(*args, **kwargs, **_xkwargs)</span>
+            <span class="n">_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">_xkwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">_argname</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">_mat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\&#39;(\w+)\&#39;\s*$&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">_mat</span><span class="p">:</span>
+                <span class="n">_argname</span> <span class="o">=</span> <span class="n">_mat</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">_argname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="p">:</span>
+                    <span class="n">_argname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_argname</span><span class="p">)</span>
+                    <span class="n">_argname</span> <span class="o">=</span> <span class="s2">&quot;missing parameter «</span><span class="si">{}</span><span class="s2">»&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_argname</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Function.__call__: function «</span><span class="si">%s</span><span class="s2">».«</span><span class="si">%s</span><span class="s2">»; </span><span class="si">%s</span><span class="s2">; (original function error: </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">_argname</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="c1">#print(self._instance, _bound)</span>
+        <span class="c1">#self._instance._boundargs = _bound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">_arguments</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">_bound</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
+        <span class="c1">#return self._func(*_bound.args, **_bound.kwargs)</span>
+        <span class="n">_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="o">*</span><span class="n">_bound</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">_bound</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="s2">&quot;_result_attr&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">_internals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">_argmap_ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;return&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_argmap_ret</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">_argmap_ret</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_argmap_ret</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">==</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+                <span class="n">_attr_name</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">add_param</span><span class="p">(</span><span class="n">_attr_name</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">_result</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;«internal»&quot;</span><span class="p">)</span>
+                <span class="n">_internals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_attr_name</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_argmap_ret</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">_argmap_ret</span> <span class="o">=</span> <span class="n">_argmap_ret</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_eval_ret</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">_argmap_ret</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">_eval_ret</span> <span class="o">=</span> <span class="n">_argmap_ret</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_eval_ret</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">_attr_name</span> <span class="o">=</span> <span class="n">_eval_ret</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">add_param</span><span class="p">(</span><span class="n">_eval_ret</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">_result</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;«internal»&quot;</span><span class="p">)</span>
+                    <span class="n">_internals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_attr_name</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_eval_ret</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_result</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_eval_ret</span><span class="p">:</span>
+                            <span class="n">_attr_name</span> <span class="o">=</span> <span class="n">_eval_ret</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">_attr_name</span> <span class="o">=</span> <span class="n">k</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">add_param</span><span class="p">(</span><span class="n">_attr_name</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;«internal»&quot;</span><span class="p">)</span>
+                        <span class="n">_internals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_attr_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">_internals</span> <span class="o">=</span> <span class="n">_internals</span>
+            <span class="c1">#self._instance._externals = list(self._sig.parameters.keys())</span>
+        <span class="k">return</span> <span class="n">_result</span>
+
+
+
+<div class="viewcode-block" id="Loadcase"><a class="viewcode-back" href="../../api.html#pflacs.Loadcase">[docs]</a><span class="k">class</span> <span class="nc">Loadcase</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for creating pflacs nodes.</span>
+
+<span class="sd">    :param name: node name</span>
+<span class="sd">    :type name: str or None</span>
+<span class="sd">    :param parent: The parent node of this node.</span>
+<span class="sd">    :type parent: Node or None</span>
+<span class="sd">    :param data: Dictionary containing node data.</span>
+<span class="sd">    :type data: dict or None</span>
+<span class="sd">    :param treedict: Dictionary specifying a complete tree.</span>
+<span class="sd">    :type treedict: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_clsname</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+    <span class="n">_result_attr</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+    <span class="c1">#_hdf_fpath = TreeAttr(&quot;_vntree_meta&quot;)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pyfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">treedict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vnpkl_fpath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">treedict</span><span class="p">,</span> <span class="n">vnpkl_fpath</span><span class="p">)</span>
+        <span class="c1">#self.set_data(&quot;params&quot;, value={})</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_k</span><span class="p">,</span> <span class="n">_v</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;value&quot;</span> <span class="ow">in</span> <span class="n">_v</span><span class="p">:</span>
+                    <span class="n">params</span><span class="p">[</span><span class="n">_k</span><span class="p">]</span> <span class="o">=</span> <span class="n">_v</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">params</span><span class="p">[</span><span class="n">_k</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">_v</span><span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_pars</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">_pars</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">))</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">_pars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span>  <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">import_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;plugins&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">_plist</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;plugins&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_plist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;plugins&quot;</span><span class="p">]</span> <span class="o">=</span>  <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">_plist</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_plug</span> <span class="ow">in</span> <span class="n">_plist</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plugin_func</span><span class="p">(</span><span class="o">*</span><span class="n">_plug</span><span class="p">)</span>
+        <span class="c1"># if pyfile:</span>
+        <span class="c1">#     self.import_params_pyfile(pyfile)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clsname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result_attr</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># if hdf_fpath and isinstance(hdf_fpath, str):</span>
+        <span class="c1">#     self._hdf_fpath = hdf_fpath</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_hdf_fpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Attribute that indicates the path for the HDF5 file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vnpkl_fpath</span><span class="p">:</span>
+            <span class="n">_pp</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vnpkl_fpath</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">_pp</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.hdf5&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span> <span class="nf">add_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;«add_param»&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;add_param: </span><span class="si">{}</span><span class="s2"> is already param of «</span><span class="si">{}</span><span class="s2">»!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">desc</span><span class="p">))</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+    <span class="k">def</span> <span class="nf">is_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]:</span>
+            <span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+            <span class="n">_exists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">is_param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_exists</span>
+
+
+    <span class="k">def</span> <span class="nf">import_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_key</span><span class="p">,</span> <span class="n">_pdict</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># if callable(_val) or isinstance(_val, ModuleType):</span>
+            <span class="c1">#     continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">_key</span><span class="p">,</span> <span class="o">**</span><span class="n">_pdict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># def import_params_pyfile(self, pyfile):</span>
+    <span class="c1">#     gbl_var={}; loc_var={}</span>
+    <span class="c1">#     try:</span>
+    <span class="c1">#         exec(compile(open(pyfile).read(), pyfile, &#39;exec&#39;), gbl_var, loc_var)</span>
+    <span class="c1">#     except Exception as err:</span>
+    <span class="c1">#         logger.error(&quot;%s.import_params_pyfile: cannot import parameters from file %s; %s&quot; % (self.__class__.__name__, pyfile, err))</span>
+    <span class="c1">#         return False</span>
+    <span class="c1">#     #return self.import_params(loc_var)</span>
+    <span class="c1">#     for _key, _val in loc_var.items():</span>
+    <span class="c1">#         if callable(_val) or isinstance(_val, types.ModuleType):</span>
+    <span class="c1">#             continue</span>
+    <span class="c1">#         self.add_param(_key, _val)</span>
+    <span class="c1">#     return True</span>
+
+
+
+<div class="viewcode-block" id="Loadcase.plugin_func"><a class="viewcode-back" href="../../api.html#pflacs.Loadcase.plugin_func">[docs]</a>    <span class="k">def</span> <span class="nf">plugin_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">argmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Patch a function into «Loadcase» class as an instance bound method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.plugin_func: patching function «</span><span class="si">%s</span><span class="s2">».&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">func</span><span class="p">))</span>
+        <span class="c1"># test if «function» is valid for Pflacs:</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;arg «func» must be str or function; «module» must be str.&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">module</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">_mod</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+                <span class="n">_function</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_mod</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_function</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">FunctionType</span><span class="p">):</span>
+            <span class="n">_function</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_function</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1">#err = &quot;arg «func» type must be str or function.&quot;</span>
+        <span class="k">if</span> <span class="n">_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.plugin_func: args «func»=«</span><span class="si">%s</span><span class="s2">» «module»=«</span><span class="si">%s</span><span class="s2">» not valid: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span><span class="n">module</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">_argmp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">_function</span><span class="o">.</span><span class="vm">__annotations__</span><span class="p">:</span>
+            <span class="n">_argmp</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">_function</span><span class="o">.</span><span class="vm">__annotations__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">argmap</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argmap</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_argmp</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">argmap</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">_function</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.plugin_func: function «</span><span class="si">%s</span><span class="s2">» is not valid for Pflacs: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">_function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">newname</span><span class="p">:</span>
+            <span class="n">_methodname</span> <span class="o">=</span> <span class="n">newname</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_methodname</span> <span class="o">=</span> <span class="n">_function</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">_methodname</span><span class="p">,</span> <span class="n">Function</span><span class="p">(</span><span class="n">_function</span><span class="p">,</span> <span class="n">argmap</span><span class="o">=</span><span class="n">_argmp</span><span class="p">))</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">update_wrapper</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">_methodname</span><span class="p">),</span> <span class="n">_function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;plugins&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">_function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">_argmp</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span> <span class="nf">from_treedict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treedict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">treedict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">treedict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">treedict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;parent&quot;</span><span class="p">,</span> <span class="s2">&quot;childs&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;childs&quot;</span> <span class="ow">in</span> <span class="n">treedict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">_childdict</span> <span class="ow">in</span> <span class="n">treedict</span><span class="p">[</span><span class="s2">&quot;childs&quot;</span><span class="p">]:</span>
+                <span class="c1"># https://stackoverflow.com/questions/17959996/get-python-class-object-from-class-name-string-in-the-same-module</span>
+                <span class="k">if</span> <span class="s2">&quot;_clsname&quot;</span> <span class="ow">in</span> <span class="n">_childdict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">_childdict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="s2">&quot;_clsname&quot;</span><span class="p">]:</span>
+                    <span class="n">_nodecls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">_childdict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="s2">&quot;_clsname&quot;</span><span class="p">])</span>
+                    <span class="n">_nodecls</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">treedict</span><span class="o">=</span><span class="n">_childdict</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">treedict</span><span class="o">=</span><span class="n">_childdict</span><span class="p">)</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">CallNode</span><span class="p">(</span><span class="n">Loadcase</span><span class="p">):</span>
+    <span class="n">_return</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+    <span class="n">_arguments</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+    <span class="n">_callfuncname</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pyfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">treedict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callfunc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">treedict</span><span class="o">=</span><span class="n">treedict</span><span class="p">,</span>
+                        <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="c1">#self._callfunc = None</span>
+        <span class="c1">#self._return = None</span>
+        <span class="c1">#self._arguments = None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">callfunc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_callfunc</span><span class="p">(</span><span class="n">callfunc</span><span class="p">)</span>
+        <span class="c1">##self._clsname = self.__class__.__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result_attr</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_callfunc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callfuncname</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_child</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># if not self._callfuncname:</span>
+        <span class="c1">#     return None</span>
+        <span class="c1"># #_func = getattr(self, self._callfuncname)</span>
+        <span class="c1"># _func = self._callfunc</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callfunc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">_ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callfunc</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_return</span> <span class="o">=</span> <span class="n">_ret</span>
+        <span class="k">return</span> <span class="n">_ret</span>
+
+
+    <span class="k">def</span> <span class="nf">set_callfunc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callfunc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">callfunc</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callfunc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_callfuncname</span> <span class="o">=</span> <span class="n">callfunc</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">callfunc</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">callfunc</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callfunc</span><span class="o">.</span><span class="vm">__name__</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_callfuncname</span> <span class="o">=</span> <span class="n">callfunc</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.set_callfunc: «</span><span class="si">%s</span><span class="s2">» arg «callfunc»=«</span><span class="si">%s</span><span class="s2">» not correctly specified.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">callfunc</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">call_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">_parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_parameters</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># if name is None:</span>
+        <span class="c1">#     name = &quot;{} c{}&quot;.format(self._callfuncname, len(self.childs))</span>
+        <span class="n">_nodedata</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">_nodedata</span><span class="p">[</span><span class="s2">&quot;_arguments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_nodedata</span><span class="p">[</span><span class="s2">&quot;_return&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_nodedata</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">_child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">_nodedata</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">_parameters</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">call</span><span class="p">:</span>
+            <span class="n">_child</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">_child</span>
+
+    <span class="c1"># def to_df(self, norepeat=False, keep=False):</span>
+    <span class="c1">#     # df = pd.DataFrame(data={**self._arguments, **self._return})</span>
+    <span class="c1">#     if (not pandas_imported or (self._callfuncname is None) </span>
+    <span class="c1">#         or (self._return is None) ):</span>
+    <span class="c1">#         return None</span>
+    <span class="c1">#     if &quot;return&quot; in self._callfunc._argmap:</span>
+    <span class="c1">#         _ident = self._callfunc._argmap[&quot;return&quot;]</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         _ident = self._callfunc.__name__</span>
+    <span class="c1">#     if isinstance(self._return, dict):</span>
+    <span class="c1">#         _df = pd.DataFrame()</span>
+    <span class="c1">#         # for _k, _v in self._return.items():</span>
+    <span class="c1">#         #     if isinstance(_v, np.ndarray):</span>
+    <span class="c1">#         #         if len(_v) == len(_df):</span>
+    <span class="c1">#         #             _df.insert(0, _k, _v)</span>
+    <span class="c1">#         #     else:</span>
+    <span class="c1">#         #         _df.insert(0, _k, [_v]*len(_df))</span>
+    <span class="c1">#         for _k, _v in self._return.items():</span>
+    <span class="c1">#             if isinstance(_v, np.ndarray):</span>
+    <span class="c1">#                 _df.insert(len(_df.columns), _k, _v)</span>
+    <span class="c1">#         for _k, _v in self._return.items():</span>
+    <span class="c1">#             if _k in list(_df.columns.values):</span>
+    <span class="c1">#                 continue</span>
+    <span class="c1">#             _df.insert(len(_df.columns), _k, [_v]*len(_df))</span>
+    <span class="c1">#     elif isinstance(self._return, np.ndarray):</span>
+    <span class="c1">#         _df = pd.DataFrame(self._return, columns=[_ident])</span>
+    <span class="c1">#     elif isinstance(self._return, (list, tuple)):</span>
+    <span class="c1">#         _df = pd.DataFrame([self._return], columns=[_ident+str(i) for i in range(len(self._return))])</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         _df = pd.DataFrame([self._return], columns=[_ident])</span>
+    <span class="c1">#     for _k, _v in reversed(self._arguments.items()):</span>
+    <span class="c1">#         if _k in list(_df.columns.values):</span>
+    <span class="c1">#             continue</span>
+    <span class="c1">#         if isinstance(_v, np.ndarray):</span>
+    <span class="c1">#             if len(_v) == len(_df):</span>
+    <span class="c1">#                 #self._df[_k] = _v</span>
+    <span class="c1">#                 _df.insert(0, _k, _v)</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             _df.insert(0, _k, [_v]*len(_df))</span>
+    <span class="c1">#     # https://stackoverflow.com/questions/20209600/pandas-dataframe-remove-constant-column</span>
+    <span class="c1">#     if norepeat and len(_df)&gt;1:</span>
+    <span class="c1">#         _df = _df.loc[:, (_df != _df.iloc[0]).any()]</span>
+    <span class="c1">#     if keep:</span>
+    <span class="c1">#         self._df = _df</span>
+    <span class="c1">#     return _df</span>
+
+    <span class="c1"># def to_hdf(self, path=None, key=None, append=True):</span>
+    <span class="c1">#     if self._return is None:</span>
+    <span class="c1">#         logger.error(&quot;%s.to_hdf: node «%s» not called.&quot; % (self.__class__.__name__, self.name))</span>
+    <span class="c1">#         return None</span>
+    <span class="c1">#     if not self._df:</span>
+    <span class="c1">#         self.to_df(keep=True)</span>
+    <span class="c1">#     if key:</span>
+    <span class="c1">#         _key = key</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         _key=self.nodepath</span>
+    <span class="c1">#     self._df.to_hdf(path, _key, format=&quot;table&quot;, data_columns=True,</span>
+    <span class="c1">#                     append=append, mode=&quot;a&quot;)</span>
+
+
+    <span class="k">def</span> <span class="nf">to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_df</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arguments</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_arguments</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">return_df</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span>
+
+
+    <span class="k">def</span> <span class="nf">to_hdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdf_fpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.to_hdf: node «</span><span class="si">%s</span><span class="s2">» not called.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">hdf_fpath</span><span class="p">:</span>
+            <span class="n">_fpath</span> <span class="o">=</span> <span class="n">hdf_fpath</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_fpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hdf_fpath</span>
+        <span class="k">if</span> <span class="n">_fpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.to_hdf: arg `_fpath`=«</span><span class="si">%s</span><span class="s2">» not correct.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">_fpath</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">key</span><span class="p">:</span>
+            <span class="n">_key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">to_df</span><span class="p">(</span><span class="n">return_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">to_hdf</span><span class="p">(</span><span class="n">_fpath</span><span class="p">,</span> <span class="n">_key</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;table&quot;</span><span class="p">,</span> <span class="n">data_columns</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">append</span><span class="o">=</span><span class="n">append</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+    
+
+
+
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">pass</span>
+    
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user-guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pflacs  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Stephen McEntee.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
+    </div>
+  </body>
+</html>
