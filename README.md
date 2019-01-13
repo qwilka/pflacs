@@ -1,2 +1,1 @@
-# pflacs
-Pflacs: faster load-cases and parameter studies.
+Pflacs means faster load-cases and parameter studies.

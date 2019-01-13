@@ -4,6 +4,7 @@ Licensed under the MIT license.
 See «pflacs» LICENSE file for details:
 https://github.com/qwilka/pflacs/blob/master/LICENSE
 """
+import ast
 import collections
 import functools
 import importlib
@@ -11,7 +12,7 @@ import inspect
 import copy
 #import os
 #import string
-#import ast
+import pathlib
 import re
 import logging
 import sys
@@ -20,7 +21,7 @@ import sys
 import types
 logger = logging.getLogger(__name__)
 
-from vntree import Node, NodeAttr
+from vntree import Node, NodeAttr, TreeAttr
 
 
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
@@ -40,12 +41,16 @@ class Parameter:
     def __init__(self, name, desc=""):
         self.name = name
         self.desc = desc
+        self.access_coord = None
     def __get__(self, instance, owner):
         if instance:
-            #_val = instance.data["params"].get(self.name, None)
             _val = instance.data["params"].get(self.name, None)
+            # if self.access_coord is None:
+            #     self.access_coord = instance._coord
             if _val and isinstance(_val, dict) and "value" in _val:
                 _val = _val["value"] 
+                # print("Parameter in node: ", instance._coord, "accessed from: ", self.access_coord)
+                # self.access_coord = None
             if _val is None and instance.parent:
                 _val = getattr(instance.parent, self.name)
         elif owner:
@@ -60,6 +65,8 @@ class Parameter:
         del instance.data["params"][self.name]
     def __set_name__(self, owner, name):  # not required: this is only called for attributes defined when the class is created
         self.name = name
+        #print("Parameter __set_name__ call: ", self.name)
+    
 
 
 
@@ -122,17 +129,48 @@ class Function:
         #print(self._instance, _bound)
         #self._instance._boundargs = _bound
         self._instance._arguments = copy.deepcopy(_bound.arguments)
-        return self._func(*_bound.args, **_bound.kwargs)
+        #return self._func(*_bound.args, **_bound.kwargs)
+        _result = self._func(*_bound.args, **_bound.kwargs)
+        if self._instance and getattr(self._instance, "_result_attr", None):
+            _internals = []
+            _argmap_ret = self._argmap.get("return", None)
+            if _argmap_ret is None or (isinstance(_argmap_ret, str) and _argmap_ret.strip()==""):
+                _attr_name = "_"+self.name
+                self._instance.add_param(_attr_name, value=_result, desc="«internal»")
+                _internals.append(_attr_name)
+            elif isinstance(_argmap_ret, str):
+                _argmap_ret = _argmap_ret.strip()
+                try:
+                    _eval_ret = ast.literal_eval(_argmap_ret)
+                except ValueError:
+                    _eval_ret = _argmap_ret
+                if isinstance(_eval_ret, str):
+                    _attr_name = _eval_ret
+                    self._instance.add_param(_eval_ret, value=_result, desc="«internal»")
+                    _internals.append(_attr_name)
+                elif isinstance(_eval_ret, dict) and isinstance(_result, dict):
+                    for k, v in _result.items():
+                        if k in _eval_ret:
+                            _attr_name = _eval_ret[k]
+                        else:
+                            _attr_name = k
+                        self._instance.add_param(_attr_name, value=v, desc="«internal»")
+                        _internals.append(_attr_name)
+            self._instance._internals = _internals
+            #self._instance._externals = list(self._sig.parameters.keys())
+        return _result
 
 
 
 class Loadcase(Node):
     _clsname = NodeAttr()
+    _result_attr = NodeAttr()
     desc = NodeAttr()
+    #_hdf_fpath = TreeAttr("_vntree_meta")
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
-                data=None, treedict=None):
-        super().__init__(name, parent, data, treedict)
+                data=None, treedict=None, vnpkl_fpath=None):
+        super().__init__(name, parent, data, treedict, vnpkl_fpath)
         #self.set_data("params", value={})
         params = {}
         if parameters and isinstance(parameters, dict):
@@ -160,6 +198,18 @@ class Loadcase(Node):
         # if pyfile:
         #     self.import_params_pyfile(pyfile)
         self._clsname = self.__class__.__name__
+        self._result_attr = False
+        # if hdf_fpath and isinstance(hdf_fpath, str):
+        #     self._hdf_fpath = hdf_fpath
+
+
+    @property
+    def _hdf_fpath(self):
+        if self._vnpkl_fpath:
+            _pp = pathlib.Path(self._vnpkl_fpath)
+            return str(_pp.with_suffix(".hdf5"))
+        else:
+            return None
 
 
     def add_param(self, name, value=None, desc="«add_param»", **kwargs):
@@ -277,6 +327,7 @@ class CallNode(Loadcase):
         if callfunc:
             self.set_callfunc(callfunc)
         ##self._clsname = self.__class__.__name__
+        self._result_attr = True
 
     @property
     def _callfunc(self):
@@ -290,8 +341,9 @@ class CallNode(Loadcase):
         # _func = self._callfunc
         if self._callfunc is None:
             return None
-        self._return = self._callfunc(*args, **kwargs)
-        return self._return
+        _ret = self._callfunc(*args, **kwargs)
+        self._return = _ret
+        return _ret
 
 
     def set_callfunc(self, callfunc):
@@ -318,62 +370,93 @@ class CallNode(Loadcase):
             _child()
         return _child
 
-    def to_df(self, norepeat=False, keep=False):
-        if (not pandas_imported or (self._callfuncname is None) 
-            or (self._return is None) ):
-            return None
-        if "return" in self._callfunc._argmap:
-            _ident = self._callfunc._argmap["return"]
-        else:
-            _ident = self._callfunc.__name__
-        if isinstance(self._return, dict):
-            _df = pd.DataFrame()
-            # for _k, _v in self._return.items():
-            #     if isinstance(_v, np.ndarray):
-            #         if len(_v) == len(_df):
-            #             _df.insert(0, _k, _v)
-            #     else:
-            #         _df.insert(0, _k, [_v]*len(_df))
-            for _k, _v in self._return.items():
-                if isinstance(_v, np.ndarray):
-                    _df.insert(len(_df.columns), _k, _v)
-            for _k, _v in self._return.items():
-                if _k in list(_df.columns.values):
-                    continue
-                _df.insert(len(_df.columns), _k, [_v]*len(_df))
-        elif isinstance(self._return, np.ndarray):
-            _df = pd.DataFrame(self._return, columns=[_ident])
-        elif isinstance(self._return, (list, tuple)):
-            _df = pd.DataFrame([self._return], columns=[_ident+str(i) for i in range(len(self._return))])
-        else:
-            _df = pd.DataFrame([self._return], columns=[_ident])
-        for _k, _v in reversed(self._arguments.items()):
-            if _k in list(_df.columns.values):
-                continue
-            if isinstance(_v, np.ndarray):
-                if len(_v) == len(_df):
-                    #self._df[_k] = _v
-                    _df.insert(0, _k, _v)
-            else:
-                _df.insert(0, _k, [_v]*len(_df))
-        # https://stackoverflow.com/questions/20209600/pandas-dataframe-remove-constant-column
-        if norepeat and len(_df)>1:
-            _df = _df.loc[:, (_df != _df.iloc[0]).any()]
-        if keep:
-            self._df = _df
-        return _df
+    # def to_df(self, norepeat=False, keep=False):
+    #     # df = pd.DataFrame(data={**self._arguments, **self._return})
+    #     if (not pandas_imported or (self._callfuncname is None) 
+    #         or (self._return is None) ):
+    #         return None
+    #     if "return" in self._callfunc._argmap:
+    #         _ident = self._callfunc._argmap["return"]
+    #     else:
+    #         _ident = self._callfunc.__name__
+    #     if isinstance(self._return, dict):
+    #         _df = pd.DataFrame()
+    #         # for _k, _v in self._return.items():
+    #         #     if isinstance(_v, np.ndarray):
+    #         #         if len(_v) == len(_df):
+    #         #             _df.insert(0, _k, _v)
+    #         #     else:
+    #         #         _df.insert(0, _k, [_v]*len(_df))
+    #         for _k, _v in self._return.items():
+    #             if isinstance(_v, np.ndarray):
+    #                 _df.insert(len(_df.columns), _k, _v)
+    #         for _k, _v in self._return.items():
+    #             if _k in list(_df.columns.values):
+    #                 continue
+    #             _df.insert(len(_df.columns), _k, [_v]*len(_df))
+    #     elif isinstance(self._return, np.ndarray):
+    #         _df = pd.DataFrame(self._return, columns=[_ident])
+    #     elif isinstance(self._return, (list, tuple)):
+    #         _df = pd.DataFrame([self._return], columns=[_ident+str(i) for i in range(len(self._return))])
+    #     else:
+    #         _df = pd.DataFrame([self._return], columns=[_ident])
+    #     for _k, _v in reversed(self._arguments.items()):
+    #         if _k in list(_df.columns.values):
+    #             continue
+    #         if isinstance(_v, np.ndarray):
+    #             if len(_v) == len(_df):
+    #                 #self._df[_k] = _v
+    #                 _df.insert(0, _k, _v)
+    #         else:
+    #             _df.insert(0, _k, [_v]*len(_df))
+    #     # https://stackoverflow.com/questions/20209600/pandas-dataframe-remove-constant-column
+    #     if norepeat and len(_df)>1:
+    #         _df = _df.loc[:, (_df != _df.iloc[0]).any()]
+    #     if keep:
+    #         self._df = _df
+    #     return _df
 
-    def to_hdf(self, path=None, key=None, append=True):
+    # def to_hdf(self, path=None, key=None, append=True):
+    #     if self._return is None:
+    #         logger.error("%s.to_hdf: node «%s» not called." % (self.__class__.__name__, self.name))
+    #         return None
+    #     if not self._df:
+    #         self.to_df(keep=True)
+    #     if key:
+    #         _key = key
+    #     else:
+    #         _key=self.nodepath
+    #     self._df.to_hdf(path, _key, format="table", data_columns=True,
+    #                     append=append, mode="a")
+
+
+    def to_df(self, return_df=True):
+        if self._arguments and self._return:
+            self._df = pd.DataFrame(data={**self._arguments, **self._return})
+        else:
+            self._df = None
+        if return_df:
+            return self._df
+
+
+    def to_hdf(self, hdf_fpath=None, key=None, append=True):
         if self._return is None:
             logger.error("%s.to_hdf: node «%s» not called." % (self.__class__.__name__, self.name))
             return None
-        if not self._df:
-            self.to_df(keep=True)
+        if hdf_fpath:
+            _fpath = hdf_fpath
+        else:
+            _fpath = self._hdf_fpath
+        if _fpath is None:
+            logger.error("%s.to_hdf: arg `_fpath`=«%s» not correct." % (self.__class__.__name__, _fpath))
+            return None
         if key:
             _key = key
         else:
-            _key=self.nodepath
-        self._df.to_hdf(path, _key, format="table", data_columns=True,
+            _key = self._path
+        if self._df is None:
+            self.to_df(return_df=False)
+        self._df.to_hdf(_fpath, _key, format="table", data_columns=True,
                         append=append, mode="a")
     
 
