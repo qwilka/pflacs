@@ -19,6 +19,7 @@ import sys
 #import time
 #from traceback import extract_stack
 import types
+import warnings
 logger = logging.getLogger(__name__)
 
 from vntree import Node, NodeAttr, TreeAttr
@@ -28,12 +29,9 @@ logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
 
 import numpy as np
 
-try:
-    import pandas as pd
-    pandas_imported = True
-except:
-    logger.warning("pflacs cannot import external module «pandas».")
-    pandas_imported = False  
+import pandas as pd
+from tables import NaturalNameWarning
+warnings.simplefilter('ignore', NaturalNameWarning)  
 
 
 class Parameter:
@@ -163,6 +161,17 @@ class Function:
 
 
 class Loadcase(Node):
+    """Class for creating pflacs nodes.
+
+    :param name: node name
+    :type name: str or None
+    :param parent: The parent node of this node.
+    :type parent: Node or None
+    :param data: Dictionary containing node data.
+    :type data: dict or None
+    :param treedict: Dictionary specifying a complete tree.
+    :type treedict: dict or None
+    """
     _clsname = NodeAttr()
     _result_attr = NodeAttr()
     desc = NodeAttr()
@@ -205,6 +214,8 @@ class Loadcase(Node):
 
     @property
     def _hdf_fpath(self):
+        """Attribute that indicates the path for the HDF5 file.
+        """
         if self._vnpkl_fpath:
             _pp = pathlib.Path(self._vnpkl_fpath)
             return str(_pp.with_suffix(".hdf5"))
@@ -439,7 +450,7 @@ class CallNode(Loadcase):
             return self._df
 
 
-    def to_hdf(self, hdf_fpath=None, key=None, append=True):
+    def to_hdf(self, hdf_fpath=None, key=None, append=False):
         if self._return is None:
             logger.error("%s.to_hdf: node «%s» not called." % (self.__class__.__name__, self.name))
             return None
