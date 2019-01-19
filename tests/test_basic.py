@@ -10,7 +10,7 @@ def sub_xy(x, y):
     return x - y
 
 
-basecase = Premise("Base case", params={"a":10, "b":20, "c":30},
+basecase = Premise("Base case", parameters={"a":10, "b":20, "c":30},
                 data={"description": "This is the base-case loadcase."})
 basecase.plugin_func(add_abc)
 
@@ -21,7 +21,7 @@ para1 = Premise("Parameter study 1", parent=basecase,
 para1.plugin_func(sub_xy, argmap={"x": "a", "y":"b"})
 
 para2 = Premise("Parameter study 2", parent=basecase,
-                params={"a":-20.8},
+                parameters={"a":-20.8},
                 data={"description": ("This is the 2nd parameter study "
                 "loadcase." )
                 })

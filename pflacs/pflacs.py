@@ -39,7 +39,7 @@ class Parameter:
     def __init__(self, name, desc=""):
         self.name = name
         self.desc = desc
-        self.access_coord = None
+        self._access_coord = None  # just a test, get the instance coord...
     def __get__(self, instance, owner):
         if instance:
             _val = instance.data["params"].get(self.name, None)
@@ -129,7 +129,7 @@ class Function:
         self._instance._arguments = copy.deepcopy(_bound.arguments)
         #return self._func(*_bound.args, **_bound.kwargs)
         _result = self._func(*_bound.args, **_bound.kwargs)
-        if self._instance and getattr(self._instance, "_result_attr", None):
+        if self._instance and getattr(self._instance, "_return2attr", False):
             _internals = []
             _argmap_ret = self._argmap.get("return", None)
             if _argmap_ret is None or (isinstance(_argmap_ret, str) and _argmap_ret.strip()==""):
@@ -173,7 +173,7 @@ class Premise(Node):
     :type treedict: dict or None
     """
     _clsname = NodeAttr()
-    _result_attr = NodeAttr()
+    _return2attr = NodeAttr()
     desc = NodeAttr()
     #_hdf_fpath = TreeAttr("_vntree_meta")
 
@@ -207,7 +207,7 @@ class Premise(Node):
         # if pyfile:
         #     self.import_params_pyfile(pyfile)
         self._clsname = self.__class__.__name__
-        self._result_attr = False
+        self._return2attr = False
         # if hdf_fpath and isinstance(hdf_fpath, str):
         #     self._hdf_fpath = hdf_fpath
 
@@ -269,15 +269,36 @@ class Premise(Node):
         """
         logger.info("%s.plugin_func: patching function «%s»." % (self.__class__.__name__, func))
         # test if «function» is valid for Pflacs:
-        err = "arg «func» must be str or function; «module» must be str."
+        err = "arg «func» must be str|function; «module» must be str|None."
+        #print("plugin_func", func, module, type(func), type(module))
         if isinstance(func, str):
             if module and isinstance(module, str):
                 _mod = importlib.import_module(module)
                 _function = getattr(_mod, func)
-            else:
-                _function = locals().get(func)
+            # else:
+            #     # print("locals()")
+            #     # for k, v in  locals().items():
+            #     #     print("locals()", k, v)
+            #     # print("frame = inspect.stack()[1][0]")
+            #     # frame = inspect.stack()[1][0]
+            #     # for k, v in  frame.f_locals.items():
+            #     #     if k==func: print(k, ", ************************************")
+            #     #     print("frame", k, v)
+            #     # # print("globals()")
+            #     # # for k, v in globals().items():
+            #     # #     if k==func: print(k, ", ************************************")
+            #     # #     print("globals()", k, v)
+            #     # # print("vars()")
+            #     # # for k, v in vars().items():
+            #     # #     if k==func: print(k, ", ************************************")
+            #     # #     print("vars()", k, v)
+            #     # print()
+            #     _function = locals().get(func)
         elif isinstance(func, types.FunctionType):
             _function = func
+            #print("func.__module__", func.__module__, type(func.__module__))
+            if module is None:
+                module = func.__module__
         else:
             _function = None
             #err = "arg «func» type must be str or function."
@@ -322,56 +343,55 @@ class Premise(Node):
 
 
 
-class CallNode(Premise):
+class Calc(Premise):
     _return = NodeAttr()
     _arguments = NodeAttr()
-    _callfuncname = NodeAttr()
+    _calcfuncname = NodeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
-                data=None, treedict=None, callfunc=None):
+                data=None, treedict=None, funcname=None):
         super().__init__(name, parent, data=data, treedict=treedict,
                         parameters=parameters)
-        #self._callfunc = None
-        #self._return = None
-        #self._arguments = None
         self._df = None
-        if callfunc:
-            self.set_callfunc(callfunc)
-        ##self._clsname = self.__class__.__name__
-        self._result_attr = True
+        self._funcname = funcname
+        self._return2attr = True
 
-    @property
-    def _callfunc(self):
-        return getattr(self, self._callfuncname, None)
+    # @property
+    # def _calcfunc(self):
+    #     return getattr(self, self._calcfuncname, None)
 
 
     def __call__(self, add_child=False, *args, **kwargs):
-        # if not self._callfuncname:
-        #     return None
-        # #_func = getattr(self, self._callfuncname)
-        # _func = self._callfunc
-        if self._callfunc is None:
-            return None
-        _ret = self._callfunc(*args, **kwargs)
-        self._return = _ret
+        if isinstance(self._funcname, str):
+            _funclist = [self._funcname]
+        elif isinstance(self._funcname, (list, tuple)):
+            _funclist = self._funcname
+        else:
+            return False
+        for _name in _funclist:
+            _func = getattr(self, _name, None)
+            if _func is None:
+                return False
+            _ret = _func(*args, **kwargs)
+            self._return = _ret
         return _ret
 
 
-    def set_callfunc(self, callfunc):
-        if isinstance(callfunc, str) and hasattr(self, callfunc):
-            self._callfuncname = callfunc
-        elif callable(callfunc) and hasattr(callfunc, "__name__") and hasattr(self, callfunc.__name__):
-            self._callfuncname = callfunc.__name__
+    def set_calcfunc(self, calcfunc):
+        if isinstance(calcfunc, str) and hasattr(self, calcfunc):
+            self._calcfuncname = calcfunc
+        elif callable(calcfunc) and hasattr(calcfunc, "__name__") and hasattr(self, calcfunc.__name__):
+            self._calcfuncname = calcfunc.__name__
         else:
-            logger.warning("%s.set_callfunc: «%s» arg «callfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, callfunc))
+            logger.warning("%s.set_calcfunc: «%s» arg «calcfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, calcfunc))
 
-    def call_child(self, call=False, name=None, **kwargs):
+    def calc_child(self, call=False, name=None, **kwargs):
         if kwargs:
             _parameters = dict(kwargs)
         else:
             _parameters = None
         # if name is None:
-        #     name = "{} c{}".format(self._callfuncname, len(self.childs))
+        #     name = "{} c{}".format(self._calcfuncname, len(self.childs))
         _nodedata = copy.deepcopy(self.data)
         _nodedata["_arguments"] = None
         _nodedata["_return"] = None
@@ -383,13 +403,13 @@ class CallNode(Premise):
 
     # def to_df(self, norepeat=False, keep=False):
     #     # df = pd.DataFrame(data={**self._arguments, **self._return})
-    #     if (not pandas_imported or (self._callfuncname is None) 
+    #     if (not pandas_imported or (self._calcfuncname is None) 
     #         or (self._return is None) ):
     #         return None
-    #     if "return" in self._callfunc._argmap:
-    #         _ident = self._callfunc._argmap["return"]
+    #     if "return" in self._calcfunc._argmap:
+    #         _ident = self._calcfunc._argmap["return"]
     #     else:
-    #         _ident = self._callfunc.__name__
+    #         _ident = self._calcfunc.__name__
     #     if isinstance(self._return, dict):
     #         _df = pd.DataFrame()
     #         # for _k, _v in self._return.items():
