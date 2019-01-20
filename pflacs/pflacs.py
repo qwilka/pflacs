@@ -83,7 +83,7 @@ class Function:
         #self._owner = None
     def __get__(self, instance, owner):
         logger.debug("Function.__get__ «instance» {}, «owner» {}".format(instance, owner))
-        self._instance = instance
+        self._instance = instance  # fragile?? must be sync
         #self._owner = owner
         return self
     def __call__(self, *args, **kwargs):
@@ -100,7 +100,11 @@ class Function:
             elif _para.name in kwargs:
                 logger.debug("Function.__call__: WARNING «%s».«%s»; parameter name «%s» is keyword argument in original function «%s» (binding nonetheless)." % (self._instance, self.name, _para.name, self._func.__name__))
                 continue
-            if self._argmap and _para.name in self._argmap.keys():
+            if (self._instance and hasattr(self._instance, "_argmap") and
+                    isinstance(self._instance._argmap, dict) and
+                    _para.name in self._instance._argmap.keys() ):
+                _inst_param = self._instance._argmap[_para.name]
+            elif self._argmap and _para.name in self._argmap.keys():
                 _inst_param = self._argmap[_para.name]
             else:
                 _inst_param = _para.name
@@ -129,13 +133,16 @@ class Function:
         self._instance._arguments = copy.deepcopy(_bound.arguments)
         #return self._func(*_bound.args, **_bound.kwargs)
         _result = self._func(*_bound.args, **_bound.kwargs)
+        # internals
         if self._instance and getattr(self._instance, "_return2attr", False):
-            _internals = []
+            _return2attr = getattr(self._instance, "_return2attr", False)
+            _internals = {} # _internals = []
             _argmap_ret = self._argmap.get("return", None)
             if _argmap_ret is None or (isinstance(_argmap_ret, str) and _argmap_ret.strip()==""):
-                _attr_name = "_"+self.name
+                _attr_name = "_"+self.name # avoid name clash in default attr name
+                ##_attr_name = self.name
                 self._instance.add_param(_attr_name, value=_result, desc="«internal»")
-                _internals.append(_attr_name)
+                _internals[_attr_name] = _result #_internals.append(_attr_name)
             elif isinstance(_argmap_ret, str):
                 _argmap_ret = _argmap_ret.strip()
                 try:
@@ -145,7 +152,7 @@ class Function:
                 if isinstance(_eval_ret, str):
                     _attr_name = _eval_ret
                     self._instance.add_param(_eval_ret, value=_result, desc="«internal»")
-                    _internals.append(_attr_name)
+                    _internals[_attr_name] = _result #_internals.append(_attr_name)
                 elif isinstance(_eval_ret, dict) and isinstance(_result, dict):
                     for k, v in _result.items():
                         if k in _eval_ret:
@@ -153,8 +160,9 @@ class Function:
                         else:
                             _attr_name = k
                         self._instance.add_param(_attr_name, value=v, desc="«internal»")
-                        _internals.append(_attr_name)
-            self._instance._internals = _internals
+                        _internals[_attr_name] = v #_internals.append(_attr_name)
+            #self._instance._internals = _internals
+            self._instance._internals.update(_internals)
             #self._instance._externals = list(self._sig.parameters.keys())
         return _result
 
@@ -228,7 +236,7 @@ class Premise(Node):
             logger.debug("add_param: {} is already param of «{}»!".format(name, self.name))
         else:
             setattr(self.__class__, name, Parameter(name, desc))
-            setattr(self, name, value)
+        setattr(self, name, value)
         return True
 
 
@@ -344,17 +352,22 @@ class Premise(Node):
 
 
 class Calc(Premise):
-    _return = NodeAttr()
+    _internals = NodeAttr(initial={})
     _arguments = NodeAttr()
-    _calcfuncname = NodeAttr()
+    #_calcfuncname = NodeAttr()
+    _funcname = NodeAttr()
+    _argmap = NodeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None, pyfile=None,
-                data=None, treedict=None, funcname=None):
+                data=None, treedict=None, funcname=None, argmap=None):
         super().__init__(name, parent, data=data, treedict=treedict,
                         parameters=parameters)
         self._df = None
         self._funcname = funcname
         self._return2attr = True
+        self._argmap = None
+        if isinstance(argmap, dict):
+            self._argmap = argmap
 
     # @property
     # def _calcfunc(self):
@@ -368,22 +381,24 @@ class Calc(Premise):
             _funclist = self._funcname
         else:
             return False
+        self._internals = {}
         for _name in _funclist:
             _func = getattr(self, _name, None)
-            if _func is None:
+            if not callable(_func):
+                logger.error("%s.__call__: node «%s» function «%s» not callable." % (self.__class__.__name__, self.name, _func))
                 return False
             _ret = _func(*args, **kwargs)
             self._return = _ret
         return _ret
 
 
-    def set_calcfunc(self, calcfunc):
-        if isinstance(calcfunc, str) and hasattr(self, calcfunc):
-            self._calcfuncname = calcfunc
-        elif callable(calcfunc) and hasattr(calcfunc, "__name__") and hasattr(self, calcfunc.__name__):
-            self._calcfuncname = calcfunc.__name__
-        else:
-            logger.warning("%s.set_calcfunc: «%s» arg «calcfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, calcfunc))
+    # def set_calcfunc(self, calcfunc):
+    #     if isinstance(calcfunc, str) and hasattr(self, calcfunc):
+    #         self._calcfuncname = calcfunc
+    #     elif callable(calcfunc) and hasattr(calcfunc, "__name__") and hasattr(self, calcfunc.__name__):
+    #         self._calcfuncname = calcfunc.__name__
+    #     else:
+    #         logger.warning("%s.set_calcfunc: «%s» arg «calcfunc»=«%s» not correctly specified." % (self.__class__.__name__, self.name, calcfunc))
 
     def calc_child(self, call=False, name=None, **kwargs):
         if kwargs:
@@ -462,15 +477,19 @@ class Calc(Premise):
 
 
     def to_df(self, return_df=True):
-        if self._arguments and self._return:
-            self._df = pd.DataFrame(data={**self._arguments, **self._return})
+        if self._arguments and self._internals:
+            try:
+                self._df = pd.DataFrame(data={**self._arguments, **self._internals})
+            except ValueError:
+                # https://stackoverflow.com/questions/17839973/constructing-pandas-dataframe-from-values-in-variables-gives-valueerror-if-usi
+                self._df = pd.DataFrame(data={**self._arguments, **self._internals}, index=[0])
         else:
             self._df = None
         if return_df:
             return self._df
 
 
-    def to_hdf(self, hdf_fpath=None, key=None, append=False):
+    def to_hdf5(self, hdf_fpath=None, key=None, append=False):
         if self._return is None:
             logger.error("%s.to_hdf: node «%s» not called." % (self.__class__.__name__, self.name))
             return None
