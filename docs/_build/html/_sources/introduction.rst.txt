@@ -16,9 +16,12 @@ To install the `pflacs` module run::
 Basic Usage
 --------------
 
-Basic usage of ``pflacs`` is demonstrated in this notebook:
-`very simple example notebook <_static/very_simple_example/very_simple_example.html>`_
+Basic usage of ``pflacs`` is demonstrated in the notebook below
+(also available at `this link <https://github.com/qwilka/pflacs/blob/master/examples/very_simple_example.ipynb>`_):
 
+.. raw:: html
+
+    <iframe src="_static/very_simple_example/very_simple_example.html" height="700" width="100%"></iframe>
 
 References
 ----------
