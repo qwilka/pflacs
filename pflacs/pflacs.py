@@ -116,23 +116,26 @@ class Function:
             logger.debug("Function.__call__: function «%s».«%s»; parameter name «%s»" % (self._instance, self.name, _para.name))
             if ii<len(args):
                 continue
+            # explicit keyword argument first priority
+            _explicit_kwarg = False
             if _para.name in _applied_argmap and _applied_argmap[_para.name] in kwargs:
                 _parval = _xkwargs.pop(_applied_argmap[_para.name])
                 _xkwargs[_para.name] = _parval
+                _explicit_kwarg = True
             elif _para.name in kwargs:
                 logger.debug("Function.__call__: WARNING «%s».«%s»; parameter name «%s» is keyword argument in original function «%s» (binding nonetheless)." % (self._instance, self.name, _para.name, self._func.__name__))
                 continue
-            #if _para.name in _applied_argmap.keys():
-            if _para.name in _applied_argmap:
-                _inst_param = _applied_argmap[_para.name]
-            else:
-                _inst_param = _para.name
-            # if _inst_param in self._instance.params:
-            #     _xkwargs[_para.name] = self._instance.params[_inst_param]
-            if self._instance.is_param(_inst_param):
-                #_xkwargs[_para.name] = self._instance.get_param(_inst_param)
-                #_xkwargs[_para.name] = self._instance.params.get(_inst_param)
-                _xkwargs[_para.name] = getattr(self._instance, _inst_param)
+            if not _explicit_kwarg:
+                if _para.name in _applied_argmap:
+                    _inst_param = _applied_argmap[_para.name]
+                else:
+                    _inst_param = _para.name
+                # if _inst_param in self._instance.params:
+                #     _xkwargs[_para.name] = self._instance.params[_inst_param]
+                if self._instance.is_param(_inst_param):
+                    #_xkwargs[_para.name] = self._instance.get_param(_inst_param)
+                    #_xkwargs[_para.name] = self._instance.params.get(_inst_param)
+                    _xkwargs[_para.name] = getattr(self._instance, _inst_param)
         logger.debug("Function.__call__: function «%s».«%s»; bind args: %s & kwargs: %s;" % (self._instance, self.name, args, _xkwargs))
         try:
             #_bound = self._sig.bind(*args, **kwargs, **_xkwargs)
