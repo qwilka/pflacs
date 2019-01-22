@@ -157,7 +157,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'pflacs', 'pflacs Documentation',
-     author, 'pflacs', 'One line description of project.',
+     author, 'pflacs', '`Faster load-cases and parameter studies.',
      'Miscellaneous'),
 ]
 
@@ -183,9 +183,8 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 
 # -- Options for intersphinx extension ---------------------------------------
-
-# Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('http://docs.python.org/3', None),
+    'vntree': ('https://github.com/qwilka/vn-tree/tree/master/docs/html', None),
 }
 intersphinx_cache_limit = 0

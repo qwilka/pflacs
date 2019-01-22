@@ -5,10 +5,19 @@ API reference
 
 .. contents:: :local:
 
-Loadcase
+Premise
 ---------
-.. autoclass:: pflacs.Loadcase
+.. autoclass:: pflacs.Premise
    :members:
    :private-members:
 
+Calc
+---------
+.. autoclass:: pflacs.Calc
+   :members:
+   :private-members:
+
+Parameter
+------------------
+.. autoclass:: pflacs.Parameter
 

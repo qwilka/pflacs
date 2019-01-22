@@ -16,13 +16,12 @@ To install the `pflacs` module run::
 Basic Usage
 --------------
 
-todo....
-
-
+Basic usage of ``pflacs`` is demonstrated in this notebook:
+`very simple example notebook <_static/very_simple_example/very_simple_example.html>`_
 
 
 References
 ----------
 
-#. `PyPI <https://pypi.org/project/pflacs/>`_
-#. `GitHub <https://github.com/qwilka/pflacs>`_
+#. :py:mod:`pflacs` on ``PyPI``  https://pypi.org/project/pflacs/
+#. :py:mod:`pflacs` on ``GitHub``  https://github.com/qwilka/pflacs

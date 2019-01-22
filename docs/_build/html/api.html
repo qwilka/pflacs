@@ -43,15 +43,18 @@
 <p><cite>pflacs</cite> means faster load-cases and parameter studies.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#loadcase" id="id1">Loadcase</a></li>
+<li><a class="reference internal" href="#premise" id="id1">Premise</a></li>
+<li><a class="reference internal" href="#calc" id="id2">Calc</a></li>
+<li><a class="reference internal" href="#parameter" id="id3">Parameter</a></li>
 </ul>
 </div>
-<div class="section" id="loadcase">
-<h2><a class="toc-backref" href="#id1">Loadcase</a><a class="headerlink" href="#loadcase" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="premise">
+<h2><a class="toc-backref" href="#id1">Premise</a><a class="headerlink" href="#premise" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="pflacs.Loadcase">
-<em class="property">class </em><code class="descclassname">pflacs.</code><code class="descname">Loadcase</code><span class="sig-paren">(</span><em>name=None</em>, <em>parent=None</em>, <em>parameters=None</em>, <em>pyfile=None</em>, <em>data=None</em>, <em>treedict=None</em>, <em>vnpkl_fpath=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pflacs/pflacs.html#Loadcase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pflacs.Loadcase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class for creating pflacs nodes.</p>
+<dt id="pflacs.Premise">
+<em class="property">class </em><code class="descclassname">pflacs.</code><code class="descname">Premise</code><span class="sig-paren">(</span><em>name=None</em>, <em>parent=None</em>, <em>parameters=None</em>, <em>data=None</em>, <em>treedict=None</em>, <em>vnpkl_fpath=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pflacs/pflacs.html#Premise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pflacs.Premise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for creating pflacs data nodes.</p>
+<p><a class="reference internal" href="#pflacs.Premise" title="pflacs.Premise"><code class="xref py py-class docutils literal notranslate"><span class="pre">Premise</span></code></a> is a sub-class of <code class="xref py py-class docutils literal notranslate"><span class="pre">vntree.Node</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -59,6 +62,7 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – node name</li>
 <li><strong>parent</strong> (<em>Node</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – The parent node of this node.</li>
+<li><strong>parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – dictionary of input parameters.</li>
 <li><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Dictionary containing node data.</li>
 <li><strong>treedict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Dictionary specifying a complete tree.</li>
 </ul>
@@ -67,17 +71,66 @@
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="pflacs.Loadcase._hdf_fpath">
-<code class="descname">_hdf_fpath</code><a class="headerlink" href="#pflacs.Loadcase._hdf_fpath" title="Permalink to this definition">¶</a></dt>
+<dt id="pflacs.Premise._hdf_fpath">
+<code class="descname">_hdf_fpath</code><a class="headerlink" href="#pflacs.Premise._hdf_fpath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Attribute that indicates the path for the HDF5 file.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pflacs.Loadcase.plugin_func">
-<code class="descname">plugin_func</code><span class="sig-paren">(</span><em>func</em>, <em>module=None</em>, <em>argmap=None</em>, <em>newname=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pflacs/pflacs.html#Loadcase.plugin_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pflacs.Loadcase.plugin_func" title="Permalink to this definition">¶</a></dt>
-<dd><p>Patch a function into «Loadcase» class as an instance bound method.</p>
+<dt id="pflacs.Premise.plugin_func">
+<code class="descname">plugin_func</code><span class="sig-paren">(</span><em>func</em>, <em>module=None</em>, <em>argmap=None</em>, <em>newname=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pflacs/pflacs.html#Premise.plugin_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pflacs.Premise.plugin_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind an external Python function as a method of a <cite>pflacs</cite> tree.</p>
 </dd></dl>
 
+</dd></dl>
+
+</div>
+<div class="section" id="calc">
+<h2><a class="toc-backref" href="#id2">Calc</a><a class="headerlink" href="#calc" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pflacs.Calc">
+<em class="property">class </em><code class="descclassname">pflacs.</code><code class="descname">Calc</code><span class="sig-paren">(</span><em>name=None</em>, <em>parent=None</em>, <em>parameters=None</em>, <em>data=None</em>, <em>treedict=None</em>, <em>funcname=None</em>, <em>argmap=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pflacs/pflacs.html#Calc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pflacs.Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for creating pflacs calculation nodes.</p>
+<p><a class="reference internal" href="#pflacs.Calc" title="pflacs.Calc"><code class="xref py py-class docutils literal notranslate"><span class="pre">Calc</span></code></a> is a sub-class of <a class="reference internal" href="#pflacs.Premise" title="pflacs.Premise"><code class="xref py py-class docutils literal notranslate"><span class="pre">Premise</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – node name</li>
+<li><strong>parent</strong> (<em>Node</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – The parent node of this node.</li>
+<li><strong>parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – dictionary of input parameters.</li>
+<li><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Dictionary containing node data.</li>
+<li><strong>treedict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Dictionary specifying a complete tree.</li>
+<li><strong>funcname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – name of <cite>pflacs</cite> plugin funcion/module to be used dby this calculation node.</li>
+<li><strong>argmap</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – optional mapping for names of function arguments and return values.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="parameter">
+<h2><a class="toc-backref" href="#id3">Parameter</a><a class="headerlink" href="#parameter" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pflacs.Parameter">
+<em class="property">class </em><code class="descclassname">pflacs.</code><code class="descname">Parameter</code><span class="sig-paren">(</span><em>name</em>, <em>desc=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pflacs/pflacs.html#Parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pflacs.Parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Descriptor class for <cite>pflacs</cite> parameters.</p>
+<p><a class="reference internal" href="#pflacs.Parameter" title="pflacs.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a> is used internally by <a class="reference internal" href="#module-pflacs" title="pflacs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pflacs</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – the parameter name.</li>
+<li><strong>desc</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – parameter description.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -94,7 +147,9 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user-guide.html">User Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#loadcase">Loadcase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#premise">Premise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#calc">Calc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameter">Parameter</a></li>
 </ul>
 </li>
 </ul>

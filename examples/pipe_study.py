@@ -89,20 +89,31 @@ if SETUP_NEW_STUDY:
                     parameters={
                         "P": 15 * 10**5,  # pipe internal pressure in Pa
                     }    )
-    lc1_pstress =  Calc("LC1 calc pipe stress", lc1, 
+    lc1_pstress =  Calc("Calc pipe stress", lc1, 
                         funcname="pipe_hoop_stress",
                         )
-    lc1_unity =  Calc("LC1 stress unity check", lc1_pstress, 
+    lc1_unity =  Calc("Stress unity check", lc1_pstress, 
                         funcname="allowable_stress_unity_check",
                         argmap={ "sigma":"_pipe_hoop_stress",
                                    "allowable":"ys",
                                    "df": "design_factor",
                         })
-    lc2 = Premise("LoadCase2, pressure 20 bar.", basecase)
-    lc3 = Premise("LoadCase3, pressure 25 bar.", basecase,
-                    parameters={
-                        "P": 25 * 10**5,  # pipe internal pressure in Pa
-                    }    )
+    # lc2 = Premise("LoadCase2, pressure 20 bar.", basecase)
+    # lc3 = Premise("LoadCase3, pressure 25 bar.", basecase,
+    #                 parameters={
+    #                     "P": 25 * 10**5,  # pipe internal pressure in Pa
+    #                 }    )
+    lc2 = basecase.add_child(lc1.copy())
+    lc2.name = "LoadCase2, pressure 20 bar."
+    lc2.P = 20 * 10**5
+    lc3 = basecase.add_child(lc1.copy())
+    lc3.name = "LoadCase3, pressure 25 bar."
+    lc3.P = 25 * 10**5
+
+    for _n in basecase:
+        if callable(_n):
+            _n()
+
     basecase.savefile()
 
 
