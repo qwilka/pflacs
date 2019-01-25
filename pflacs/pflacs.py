@@ -145,8 +145,10 @@ class Function:
             _mat = re.search(r"\'(\w+)\'\s*$", str(err))
             if _mat:
                 _argname = _mat.groups()[0]
-                if _argname in self._argmap:
-                    _argname = self._argmap.get(_argname)
+                # if _argname in self._argmap:
+                #     _argname = self._argmap.get(_argname)
+                if _argname in _applied_argmap:
+                    _argname = _applied_argmap.get(_argname)
                     _argname = "missing parameter «{}»".format(_argname)
             logger.error("Function.__call__: function «%s».«%s»; %s; (original function error: %s)" % (self._instance, self.name, _argname, err))
             return False
@@ -165,7 +167,8 @@ class Function:
         if self._instance and getattr(self._instance, "_return2attr", False):
             _return2attr = getattr(self._instance, "_return2attr", False)
             _internals = {} # _internals = []
-            _argmap_ret = self._argmap.get("return", None)
+            #_argmap_ret = self._argmap.get("return", None)
+            _argmap_ret = _applied_argmap.get("return", None)
             if _argmap_ret is None or (isinstance(_argmap_ret, str) and _argmap_ret.strip()==""):
                 _attr_name = "_"+self.name # avoid name clash in default attr name
                 ##_attr_name = self.name
@@ -387,6 +390,7 @@ class Calc(Premise):
         else:
             return False
         self._internals = {}
+        self._df = None
         for _name in _funclist:
             _func = getattr(self, _name, None)
             if not callable(_func):
@@ -412,7 +416,7 @@ class Calc(Premise):
         return _child
 
 
-    def to_df(self, return_df=True):
+    def to_dataframe(self, return_df=True):
         if self._arguments and self._internals:
             try:
                 self._df = pd.DataFrame(data={**self._arguments, **self._internals})
@@ -441,7 +445,7 @@ class Calc(Premise):
         else:
             _key = self._path
         if self._df is None:
-            self.to_df(return_df=False)
+            self.to_dataframe(return_df=False)
         self._df.to_hdf(_fpath, _key, format="table", data_columns=True,
                         append=append, mode="a")
     
