@@ -22,7 +22,8 @@ use the scrollbar at the side of the frame to view the whole notebook:
 
 .. raw:: html
 
-    <iframe src="_static/very_simple_example/very_simple_example.html" height="700" width="100%"></iframe>
+    <script src="https://gist.github.com/qwilka/4e3cb26b8e7df30b2b5c96e81f8d79db.js"></script>
+
 
 References
 ----------
