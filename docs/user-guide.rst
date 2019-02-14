@@ -4,24 +4,11 @@ User Guide
 
 .. contents:: :local:
 
-The Loadcase class
+Getting started
 ---------------------
 
-The `Loadcase` class is the 
+Just for now, see the Basic Usage example in Introduction.
 
-
-Creating Loadcase
----------------------
-
-with Python code
-^^^^^^^^^^^^^^^^
-
-The following code imports the `Loadcase` class and creates a root (top-level) node:
-
-.. code-block:: python
-
-    from pflacs import Loadcase
-    rootnode = Loadcase("root-node")
-    print(f"The name of the root node is «{rootnode.name}»")
+https://qwilka.github.io/pflacs/_build/html/introduction.html#basic-usage
 
 
