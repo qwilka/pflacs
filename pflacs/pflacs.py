@@ -375,6 +375,7 @@ class Calc(Premise):
         super().__init__(name, parent, data=data, treedict=treedict,
                         parameters=parameters)
         self._df = None
+        #if not hasattr(self, ""): self._funcname = funcname
         self._funcname = funcname
         self._return2attr = True
         self._argmap = None
