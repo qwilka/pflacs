@@ -246,8 +246,9 @@ class Premise(Node):
         if _plist:
             for _plug in _plist:
                 self.plugin_func(*_plug)
-        self._clsname = self.__class__.__name__
-        self._return2attr = False
+        if treedict is None:
+            self._clsname = self.__class__.__name__
+            self._return2attr = False
 
 
     @property
@@ -328,7 +329,8 @@ class Premise(Node):
 
     def from_treedict(self, treedict):
         if "data" in treedict:
-            self.data = collections.defaultdict(dict, treedict["data"])
+            #self.data = collections.defaultdict(dict, treedict["data"])
+            self.data = copy.deepcopy(treedict["data"])
         for key, val in treedict.items():
             if key in ["parent", "childs", "data"]:
                 continue
@@ -375,12 +377,16 @@ class Calc(Premise):
         super().__init__(name, parent, data=data, treedict=treedict,
                         parameters=parameters)
         self._df = None
-        #if not hasattr(self, ""): self._funcname = funcname
-        self._funcname = funcname
-        self._return2attr = True
-        self._argmap = None
-        if isinstance(argmap, dict):
+        #self._funcname = funcname
+        if treedict is None or funcname:
+            self._funcname = funcname
+        #self._return2attr = True
+        if treedict is None:
+            self._return2attr = True
+        #self._argmap = None
+        if treedict is None or isinstance(argmap, dict):
             self._argmap = argmap
+
 
 
     def __call__(self, add_child=False, *args, **kwargs):
@@ -402,19 +408,19 @@ class Calc(Premise):
         return _ret
 
 
-    def calc_child(self, call=False, name=None, **kwargs):
-        if kwargs:
-            _parameters = dict(kwargs)
-        else:
-            _parameters = None
-        _nodedata = copy.deepcopy(self.data)
-        _nodedata["_arguments"] = None
-        _nodedata["_return"] = None
-        _nodedata["name"] = name
-        _child = self.__class__(parent=self, data=_nodedata, parameters=_parameters)
-        if call:
-            _child()
-        return _child
+    # def calc_child(self, call=False, name=None, **kwargs):
+    #     if kwargs:
+    #         _parameters = dict(kwargs)
+    #     else:
+    #         _parameters = None
+    #     _nodedata = copy.deepcopy(self.data)
+    #     _nodedata["_arguments"] = None
+    #     _nodedata["_return"] = None
+    #     _nodedata["name"] = name
+    #     _child = self.__class__(parent=self, data=_nodedata, parameters=_parameters)
+    #     if call:
+    #         _child()
+    #     return _child
 
 
     def to_dataframe(self, return_df=True):

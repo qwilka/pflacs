@@ -59,7 +59,7 @@ env_params = {
     "rho_water": 1027.,    
 }
 
-vnpkl_file = "IRL--PFLACS--P-01.vnpkl"
+vnpkl_file = "IRL--PFLACS--P-01.pflacs"
 
 
 rootnode = Premise("Pflacs oil&gas field, subsea", 
@@ -105,6 +105,14 @@ pcont1 = Calc("pressure containment (operation)", parent=P01_1,
 # pcont_test1 = Calc("pressure containment (system test)", parent=pcont1,
 #                 data={"desc": "Pressure contain calcs."},
 #                 funcname="pressure_containment_all") 
+pcont1_systest = pcont1.add_child(pcont1.copy())
+pcont1_systest.name = "System test press contain"
+pcont1_systest.p_d = 25.69e6 # system test pressure
+pcont1_systest.SC = "low"
+pcont1_systest.alpha_mpt = factor.alpha_mpt_map("low")
+pcont1_systest.alpha_spt = factor.alpha_spt_map("low")
+pcont1_systest.gamma_SCLB = factor.gamma_SCLB_map("low")
+pcont1_systest.gamma_SCPC = factor.gamma_SCPC_map("low")
 
 pcoll1 = Calc("pipe collapse", parent=P01_1,
                 data={"desc": "Pipe collapse calcs."},
@@ -137,29 +145,8 @@ P01_3.t = 0.0214
 pcont3 = P01_3.get_child_by_name("pressure containment")
 pcoll3 = P01_3.get_child_by_name("pipe collapse")
 
-# P01_2 = Premise("P-01 section 2, KP 0.3-15", 
-#                 parent=P01,
-#                 parameters={
-#                     "KP": [0.3, 15.0],
-#                     "h_l": -420,
-#                     "LC": 1,
-#                     "D": 0.6172 + 2*0.0242,
-#                     "t": 0.0242,
-#                 },
-#                 data={"desc": "P-01 section 2, KP 0.3-15."})
-
-# P01_3 = Premise("P-01 section 3, KP 15-79.7", 
-#                 parent=P01,
-#                 parameters={
-#                     "KP": [15.0, 79.7],
-#                     "LC": 1,
-#                     "D": 0.6172 + 2*0.0214,
-#                     "t": 0.0214,
-#                 },
-#                 data={"desc": "P-01 section 3, KP 15-79.7."})
-
-
-
-
+for node in rootnode:
+    if type(node) == Calc:
+        node()
 
 rootnode.savefile()
