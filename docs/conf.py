@@ -15,7 +15,7 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
+from better import better_theme_path
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +24,7 @@ copyright = '2019, Stephen McEntee'
 author = 'Stephen McEntee'
 
 # The short X.Y version
-version = ''
+version = '0.1'
 # The full version, including alpha/beta/rc tags
 release = ''
 
@@ -40,8 +40,8 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,7 +77,9 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'nature'
+#  https://sphinx-better-theme.readthedocs.io/en/latest/index.html
+html_theme_path = [better_theme_path]
+html_theme = 'better'    #'nature'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -99,10 +101,11 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 html_sidebars = {'**': [
+    'sidebarlogo.html',
+    'searchbox.html',  
     'globaltoc.html', 
-    'relations.html', 
-    'sourcelink.html', 
-    'searchbox.html']}
+    'links.html'
+]}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

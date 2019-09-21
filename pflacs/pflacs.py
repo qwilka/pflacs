@@ -160,7 +160,9 @@ class Function:
                 _applied_args[_applied_argmap[k]] = v
             else:
                 _applied_args[k] = v
-        self._instance._arguments = _applied_args
+        ##self._instance._arguments = _applied_args
+        if hasattr(self._instance, "_arguments"):
+            self._instance._arguments.update(_applied_args)
 
         _result = self._func(*_bound.args, **_bound.kwargs)
         # internals
@@ -217,6 +219,7 @@ class Premise(Node):
     _clsname = NodeAttr()
     _return2attr = NodeAttr()
     desc = NodeAttr()
+    plugins = TreeAttr()
     #_hdf_fpath = TreeAttr("_vntree_meta")
 
     def __init__(self, name=None, parent=None, parameters=None,
@@ -242,7 +245,9 @@ class Premise(Node):
             _plist = copy.copy(self.data["plugins"])
         else:
             _plist = None
-        self.data["plugins"] =  []
+        #self.data["plugins"] =  []
+        if self.plugins is None:
+            self.plugins = []
         if _plist:
             for _plug in _plist:
                 self.plugin_func(*_plug)
@@ -323,7 +328,8 @@ class Premise(Node):
             _methodname = _function.__name__
         setattr(self.__class__, _methodname, Function(_function, argmap=_argmp))
         functools.update_wrapper(getattr(self.__class__, _methodname), _function)
-        self.data["plugins"].append( (_function.__name__, module, _argmp, newname) )
+        #self.data["plugins"].append( (_function.__name__, module, _argmp, newname) )
+        self.plugins.append( (_function.__name__, module, _argmp, newname) )
         return True
 
 
@@ -397,6 +403,7 @@ class Calc(Premise):
         else:
             return False
         self._internals = {}
+        self._arguments = {}
         self._df = None
         for _name in _funclist:
             _func = getattr(self, _name, None)
@@ -404,7 +411,7 @@ class Calc(Premise):
                 logger.error("%s.__call__: node «%s» function «%s» not callable." % (self.__class__.__name__, self.name, _func))
                 return False
             _ret = _func(*args, **kwargs)
-            self._return = _ret
+            ##self._return = _ret # self._return redundant? same as self._internals
         return _ret
 
 
@@ -437,7 +444,8 @@ class Calc(Premise):
 
 
     def to_hdf5(self, hdf_fpath=None, key=None, append=False):
-        if self._return is None:
+        ##if self._return is None:
+        if self._internals is None:
             logger.error("%s.to_hdf: node «%s» not called." % (self.__class__.__name__, self.name))
             return None
         if hdf_fpath:

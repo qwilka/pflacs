@@ -1,34 +1,38 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>pflacs.pflacs &#8212; pflacs  documentation</title>
-    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/better.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pflacs  documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
-      </ul>
-    </div>  
+    <header id="pageheader"><h1><a href="../../index.html ">
+        pflacs  documentation
+    </a></h1></header>
+  <div class="related top">
+  <nav id="rellinks">
+    <ul>
+    </ul>
+  </nav>
+  <nav id="breadcrumbs">
+    <ul>
+      <li><a href="../../index.html">pflacs  documentation</a></li>
+      <li>
+        <a href="../index.html">Module code</a>
+      </li> 
+    </ul>
+  </nav>
+  </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -198,7 +202,9 @@
                 <span class="n">_applied_args</span><span class="p">[</span><span class="n">_applied_argmap</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span> <span class="o">=</span> <span class="n">v</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">_applied_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">_arguments</span> <span class="o">=</span> <span class="n">_applied_args</span>
+        <span class="c1">##self._instance._arguments = _applied_args</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span> <span class="s2">&quot;_arguments&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">_arguments</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_applied_args</span><span class="p">)</span>
 
         <span class="n">_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="o">*</span><span class="n">_bound</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">_bound</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="c1"># internals</span>
@@ -255,6 +261,7 @@
     <span class="n">_clsname</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
     <span class="n">_return2attr</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
     <span class="n">desc</span> <span class="o">=</span> <span class="n">NodeAttr</span><span class="p">()</span>
+    <span class="n">plugins</span> <span class="o">=</span> <span class="n">TreeAttr</span><span class="p">()</span>
     <span class="c1">#_hdf_fpath = TreeAttr(&quot;_vntree_meta&quot;)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -280,12 +287,15 @@
             <span class="n">_plist</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;plugins&quot;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_plist</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;plugins&quot;</span><span class="p">]</span> <span class="o">=</span>  <span class="p">[]</span>
+        <span class="c1">#self.data[&quot;plugins&quot;] =  []</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">_plist</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">_plug</span> <span class="ow">in</span> <span class="n">_plist</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">plugin_func</span><span class="p">(</span><span class="o">*</span><span class="n">_plug</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_clsname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_return2attr</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">treedict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_clsname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_return2attr</span> <span class="o">=</span> <span class="kc">False</span>
 
 
     <span class="nd">@property</span>
@@ -360,13 +370,15 @@
             <span class="n">_methodname</span> <span class="o">=</span> <span class="n">_function</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">_methodname</span><span class="p">,</span> <span class="n">Function</span><span class="p">(</span><span class="n">_function</span><span class="p">,</span> <span class="n">argmap</span><span class="o">=</span><span class="n">_argmp</span><span class="p">))</span>
         <span class="n">functools</span><span class="o">.</span><span class="n">update_wrapper</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">_methodname</span><span class="p">),</span> <span class="n">_function</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;plugins&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">_function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">_argmp</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span> <span class="p">)</span>
+        <span class="c1">#self.data[&quot;plugins&quot;].append( (_function.__name__, module, _argmp, newname) )</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">_function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">_argmp</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span> <span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
 
     <span class="k">def</span> <span class="nf">from_treedict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treedict</span><span class="p">):</span>
         <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">treedict</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">treedict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
+            <span class="c1">#self.data = collections.defaultdict(dict, treedict[&quot;data&quot;])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">treedict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">treedict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;parent&quot;</span><span class="p">,</span> <span class="s2">&quot;childs&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">]:</span>
                 <span class="k">continue</span>
@@ -413,11 +425,16 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">treedict</span><span class="o">=</span><span class="n">treedict</span><span class="p">,</span>
                         <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_funcname</span> <span class="o">=</span> <span class="n">funcname</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_return2attr</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argmap</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1">#self._funcname = funcname</span>
+        <span class="k">if</span> <span class="n">treedict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">funcname</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_funcname</span> <span class="o">=</span> <span class="n">funcname</span>
+        <span class="c1">#self._return2attr = True</span>
+        <span class="k">if</span> <span class="n">treedict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_return2attr</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1">#self._argmap = None</span>
+        <span class="k">if</span> <span class="n">treedict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argmap</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_argmap</span> <span class="o">=</span> <span class="n">argmap</span>
+
 
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_child</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -428,6 +445,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_internals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arguments</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">_name</span> <span class="ow">in</span> <span class="n">_funclist</span><span class="p">:</span>
             <span class="n">_func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -435,23 +453,23 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.__call__: node «</span><span class="si">%s</span><span class="s2">» function «</span><span class="si">%s</span><span class="s2">» not callable.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">_func</span><span class="p">))</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="n">_ret</span> <span class="o">=</span> <span class="n">_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_return</span> <span class="o">=</span> <span class="n">_ret</span>
+            <span class="c1">##self._return = _ret # self._return redundant? same as self._internals</span>
         <span class="k">return</span> <span class="n">_ret</span>
 
 
-    <span class="k">def</span> <span class="nf">calc_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">_parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">_parameters</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">_nodedata</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">_nodedata</span><span class="p">[</span><span class="s2">&quot;_arguments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">_nodedata</span><span class="p">[</span><span class="s2">&quot;_return&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">_nodedata</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="n">_child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">_nodedata</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">_parameters</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">call</span><span class="p">:</span>
-            <span class="n">_child</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">_child</span>
+    <span class="c1"># def calc_child(self, call=False, name=None, **kwargs):</span>
+    <span class="c1">#     if kwargs:</span>
+    <span class="c1">#         _parameters = dict(kwargs)</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         _parameters = None</span>
+    <span class="c1">#     _nodedata = copy.deepcopy(self.data)</span>
+    <span class="c1">#     _nodedata[&quot;_arguments&quot;] = None</span>
+    <span class="c1">#     _nodedata[&quot;_return&quot;] = None</span>
+    <span class="c1">#     _nodedata[&quot;name&quot;] = name</span>
+    <span class="c1">#     _child = self.__class__(parent=self, data=_nodedata, parameters=_parameters)</span>
+    <span class="c1">#     if call:</span>
+    <span class="c1">#         _child()</span>
+    <span class="c1">#     return _child</span>
 
 
     <span class="k">def</span> <span class="nf">to_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_df</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -468,7 +486,8 @@
 
 
     <span class="k">def</span> <span class="nf">to_hdf5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdf_fpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1">##if self._return is None:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.to_hdf: node «</span><span class="si">%s</span><span class="s2">» not called.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">hdf_fpath</span><span class="p">:</span>
@@ -503,46 +522,54 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+<img class="logo" src="../../_static/logo.png" width="180" alt="Logo"/>
+</a></p>
+<form class="search" action="../../search.html" method="get">
+  <input type="text" name="q"
+   placeholder="type to search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 <h3><a href="../../index.html">Table of Contents</a></h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user-guide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
 </ul>
-
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<h3>Links</h3>
+<ul>
+  <li><a href="https://github.com/qwilka/pflacs">pflacs on GitHub</a></li>
+  <li><a href="https://pypi.org/project/pflacs">pflacs on PyPI</a></li>
+  <li><a href="https://qwilka.github.io/">Qwilka blog</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pflacs  documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2019, Stephen McEntee.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
-    </div>
+  <div class="related bottom">
+  <nav id="rellinks">
+    <ul>
+    </ul>
+  </nav>
+  <nav id="breadcrumbs">
+    <ul>
+      <li><a href="../../index.html">pflacs  documentation</a></li>
+      <li>
+        <a href="../index.html">Module code</a>
+      </li> 
+    </ul>
+  </nav>
+  </div>
+  <footer id="pagefooter">&copy; 2019, Stephen McEntee.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a>
+      2.1.2
+        with the <a href="http://github.com/irskep/sphinx-better-theme">
+          better</a> theme.
+
+  </footer>
+
+  
   </body>
 </html>
