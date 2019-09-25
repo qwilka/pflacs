@@ -1,7 +1,7 @@
 pflacs documentation
 ===================================
 
-`pflacs` means faster load-cases and parameter studies. 
+`pflacs` means *faster load-cases and parameter studies.* 
 
 
 
