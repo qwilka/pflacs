@@ -293,6 +293,14 @@ class Premise(Node):
         return True
 
 
+    def get_param_desc(self, param):
+        try:
+            desc = self.get_data("params", param, "desc")
+        except Exception:
+            desc = f"ERROR: {str(param)} desc not available"
+        return desc
+
+
     def plugin_func(self, func, module=None, argmap=None, newname=None):
         """Bind an external Python function as a method of a `pflacs` tree.
         """
