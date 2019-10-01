@@ -1,6 +1,6 @@
 import unittest
 
-from pflacs import Premise, Parameter
+from pflacs import Premise
 
 
 def add_abc(a, b, c=0):

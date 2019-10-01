@@ -28,5 +28,8 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         "vntree",
+        "numpy",
+        "pandas",
+        "tables",
     ],
 )

@@ -34,10 +34,10 @@ from tables import NaturalNameWarning
 warnings.simplefilter('ignore', NaturalNameWarning)  # suppress spammy pytables warning
 
 
-class Parameter:
+class PflacsParam:
     """Descriptor class for `pflacs` parameters.
 
-    :class:`Parameter` is used internally by :mod:`pflacs`.
+    :class:`PflacsParam` is used internally by :mod:`pflacs`.
 
     :param name: the parameter name.
     :type name: str    
@@ -74,10 +74,10 @@ class Parameter:
         #print("Parameter __set_name__ call: ", self.name)
     
 
-class Function:
+class PflacsFunc:
     """Class for `pflacs` plugin functions.
 
-    :class:`Function` is used internally by :mod:`pflacs`.
+    :class:`PflacsFunc` is used internally by :mod:`pflacs`.
 
     :param name: function name.
     :type name: str    
@@ -89,7 +89,7 @@ class Function:
         self._sig = inspect.signature(func)
         self._func = func
         # if not isinstance(argmap, (dict, None)):
-        #     raise TypeError('Function: argument «argmap» not correctly specified.')
+        #     raise TypeError('PflacsFunc: argument «argmap» not correctly specified.')
         if isinstance(argmap, dict):
             self._argmap = argmap
         else:
@@ -97,13 +97,13 @@ class Function:
         self._instance = None
         #self._owner = None
     def __get__(self, instance, owner):
-        logger.debug("Function.__get__ «instance» {}, «owner» {}".format(instance, owner))
+        logger.debug("PflacsFunc.__get__ «instance» {}, «owner» {}".format(instance, owner))
         self._instance = instance  # fragile?? must be sync
         #self._owner = owner
         return self
     def __call__(self, *args, **kwargs):
         #_xkwargs = {}
-        logger.debug("Function.__call__: function «%s».«%s»; args «%s»; kwargs «%s»" % (self._instance, self.name, args, kwargs))
+        logger.debug("PflacsFunc.__call__: function «%s».«%s»; args «%s»; kwargs «%s»" % (self._instance, self.name, args, kwargs))
         _xkwargs = copy.deepcopy(kwargs)
         if (self._instance and hasattr(self._instance, "_argmap") and
                 isinstance(self._instance._argmap, dict)):
@@ -113,7 +113,7 @@ class Function:
         else:
             _applied_argmap = {}
         for ii, (_key, _para) in enumerate(self._sig.parameters.items()):
-            logger.debug("Function.__call__: function «%s».«%s»; parameter name «%s»" % (self._instance, self.name, _para.name))
+            logger.debug("PflacsFunc.__call__: function «%s».«%s»; parameter name «%s»" % (self._instance, self.name, _para.name))
             if ii<len(args):
                 continue
             # explicit keyword argument first priority
@@ -123,7 +123,7 @@ class Function:
                 _xkwargs[_para.name] = _parval
                 _explicit_kwarg = True
             elif _para.name in kwargs:
-                logger.debug("Function.__call__: WARNING «%s».«%s»; parameter name «%s» is keyword argument in original function «%s» (binding nonetheless)." % (self._instance, self.name, _para.name, self._func.__name__))
+                logger.debug("PflacsFunc.__call__: WARNING «%s».«%s»; parameter name «%s» is keyword argument in original function «%s» (binding nonetheless)." % (self._instance, self.name, _para.name, self._func.__name__))
                 continue
             if not _explicit_kwarg:
                 if _para.name in _applied_argmap:
@@ -136,7 +136,7 @@ class Function:
                     #_xkwargs[_para.name] = self._instance.get_param(_inst_param)
                     #_xkwargs[_para.name] = self._instance.params.get(_inst_param)
                     _xkwargs[_para.name] = getattr(self._instance, _inst_param)
-        logger.debug("Function.__call__: function «%s».«%s»; bind args: %s & kwargs: %s;" % (self._instance, self.name, args, _xkwargs))
+        logger.debug("PflacsFunc.__call__: function «%s».«%s»; bind args: %s & kwargs: %s;" % (self._instance, self.name, args, _xkwargs))
         try:
             #_bound = self._sig.bind(*args, **kwargs, **_xkwargs)
             _bound = self._sig.bind(*args, **_xkwargs)
@@ -150,7 +150,7 @@ class Function:
                 if _argname in _applied_argmap:
                     _argname = _applied_argmap.get(_argname)
                     _argname = "missing parameter «{}»".format(_argname)
-            logger.error("Function.__call__: function «%s».«%s»; %s; (original function error: %s)" % (self._instance, self.name, _argname, err))
+            logger.error("PflacsFunc.__call__: function «%s».«%s»; %s; (original function error: %s)" % (self._instance, self.name, _argname, err))
             return False
 
         #self._instance._arguments = copy.deepcopy(_bound.arguments)
@@ -271,7 +271,7 @@ class Premise(Node):
         if name in self.data["params"]:
             logger.debug("add_param: {} is already param of «{}»!".format(name, self.name))
         else:
-            setattr(self.__class__, name, Parameter(name, desc))
+            setattr(self.__class__, name, PflacsParam(name, desc))
         setattr(self, name, value)
         return True
 
@@ -334,7 +334,7 @@ class Premise(Node):
             _methodname = newname
         else:
             _methodname = _function.__name__
-        setattr(self.__class__, _methodname, Function(_function, argmap=_argmp))
+        setattr(self.__class__, _methodname, PflacsFunc(_function, argmap=_argmp))
         functools.update_wrapper(getattr(self.__class__, _methodname), _function)
         #self.data["plugins"].append( (_function.__name__, module, _argmp, newname) )
         self.plugins.append( (_function.__name__, module, _argmp, newname) )
