@@ -311,17 +311,29 @@ class Premise(Node):
             if module and isinstance(module, str):
                 _mod = importlib.import_module(module)
                 _function = getattr(_mod, func)
-        elif isinstance(func, types.FunctionType):
+        elif isinstance(func, (types.FunctionType, types.BuiltinFunctionType)):
             _function = func
             if module is None:
                 module = func.__module__
         else:
             _function = None
+        # pre-checking function signature
+        if _function:
+            try:
+                sig = inspect.signature(_function)
+            except Exception as err:
+                logger.error("%s.plugin_func: args «func»=«%s» «module»=«%s» function signature not valid: %s" % (self.__class__.__name__, func,module, err))
+                return False
+            else:
+                for _name, _para in sig.parameters.items():
+                    if _para.kind == _para.POSITIONAL_ONLY:
+                        logger.error("%s.plugin_func: args «func»=«%s» «module»=«%s» pflacs does not currently support functions with POSITIONAL_ONLY arguments." % (self.__class__.__name__, func,module))
+                        return False
         if _function is None:
             logger.error("%s.plugin_func: args «func»=«%s» «module»=«%s» not valid: %s" % (self.__class__.__name__, func,module, err))
             return False
         _argmp = {}
-        if _function.__annotations__:
+        if hasattr(_function, "__annotations__") and _function.__annotations__:
             _argmp = copy.copy(_function.__annotations__)
         if argmap and isinstance(argmap, dict):
             _argmp.update(argmap)
