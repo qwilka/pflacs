@@ -1,0 +1,10 @@
+
+async
+=====
+https://medium.com/velotio-perspectives/an-introduction-to-asynchronous-programming-in-python-af0189a88bbb
+
+
+decorators
+==========
+https://blog.miguelgrinberg.com/post/the-ultimate-guide-to-python-decorators-part-i-function-registration
+
