@@ -8,3 +8,8 @@ decorators
 ==========
 https://blog.miguelgrinberg.com/post/the-ultimate-guide-to-python-decorators-part-i-function-registration
 
+
+virtual environments
+====================
+https://github.com/pelson/conda-execute
+https://github.com/conda/conda/issues/2379  Provide a standard and fast way to execute a command inside an environment

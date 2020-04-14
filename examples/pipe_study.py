@@ -11,16 +11,16 @@ from pflacs import Premise, Calc
 
 #logger = logging.getLogger(__name__)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)  # logging.DEBUG 
+logger.setLevel(logging.WARNING)  # logging.DEBUG 
 lh = logging.StreamHandler()
 # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 # lh.setFormatter(formatter)
 logger.addHandler(lh)
 
 # https://stackoverflow.com/questions/49442523/prevent-showing-debugging-log-info-inside-ipython-shell
-logging.getLogger('parso.cache').disabled=True
-logging.getLogger('parso.cache.pickle').disabled=True
-logging.getLogger('parso.python.diff').disabled = True
+# logging.getLogger('parso.cache').disabled=True
+# logging.getLogger('parso.cache.pickle').disabled=True
+# logging.getLogger('parso.python.diff').disabled = True
 
 
 def pipe_hoop_stress(P, D, t):
@@ -60,7 +60,7 @@ def allowable_stress_unity_check(sigma, allowable, df=0.72):
     return sigma / allowable * df
 
 
-study_file = "pipe_study.pflacs"
+study_file = "pipe_study.vn4"
 
 SETUP_NEW_STUDY = True
 OPEN_EXISTING_STUDY = False
@@ -79,8 +79,7 @@ if SETUP_NEW_STUDY:
     }
 
     basecase = Premise("Pipe study base case.",
-                    parameters=study_parameters,
-                    vnpkl_fpath=study_file )
+                    parameters=study_parameters)
     basecase.plugin_func(pipe_hoop_stress)
     basecase.plugin_func(allowable_stress_unity_check)
     #basecase.plugin_func("pressure_containment_all", "pdover2t.dnvgl_st_f101")
@@ -114,7 +113,7 @@ if SETUP_NEW_STUDY:
         if callable(_n):
             _n()
 
-    basecase.savefile()
+    basecase.savefile(study_file)
 
 
 if OPEN_EXISTING_STUDY:

@@ -9,7 +9,7 @@ from pflacs import Premise, Calc
 from pipe_study import pipe_hoop_stress
 
 
-study_file = "pipe_study.pflacs"
+study_file = "pipe_study.vn4"
 
 print(f"Open Existing study from `pflacs` file «{study_file}».")
 #print("locals()", locals())

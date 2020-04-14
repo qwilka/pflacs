@@ -1,5 +1,5 @@
 """
-Copyright © 2018 Stephen McEntee
+Copyright © 2018-2020 Stephen McEntee
 Licensed under the MIT license. 
 See «pflacs» LICENSE file for details:
 https://github.com/qwilka/pflacs/blob/master/LICENSE
@@ -22,7 +22,8 @@ import types
 import warnings
 logger = logging.getLogger(__name__)
 
-from vntree import Node, NodeAttr, TreeAttr
+from vntree import NodeAttr, TreeAttr
+from vntree import SqliteNode as VntreeNode
 
 
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
@@ -200,7 +201,7 @@ class PflacsFunc:
         return _result
 
 
-class Premise(Node):
+class Premise(VntreeNode):
     """Class for creating pflacs data nodes.
 
     :class:`Premise` is a sub-class of :class:`vntree.Node`.

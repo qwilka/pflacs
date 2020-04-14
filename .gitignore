@@ -2,6 +2,7 @@
 *.pflacs
 *.hdf5
 *.vnpkl
+*.vn4
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
