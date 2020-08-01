@@ -60,7 +60,7 @@ def allowable_stress_unity_check(sigma, allowable, df=0.72):
     return sigma / allowable * df
 
 
-study_file = "pipe_study.vn4"
+study_file = "pipe_study.vn3"  # .vn4 is sqlite
 
 SETUP_NEW_STUDY = True
 OPEN_EXISTING_STUDY = False

@@ -23,7 +23,8 @@ import warnings
 logger = logging.getLogger(__name__)
 
 from vntree import NodeAttr, TreeAttr
-from vntree import SqliteNode as VntreeNode
+#from vntree import SqliteNode as VntreeNode
+from vntree import Node as VntreeNode
 
 
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
@@ -178,6 +179,7 @@ class PflacsFunc:
                 self._instance.add_param(_attr_name, value=_result, desc="«internal»")
                 _internals[_attr_name] = _result #_internals.append(_attr_name)
             elif isinstance(_argmap_ret, str):
+                print(f"_argmap_ret={_argmap_ret}")
                 _argmap_ret = _argmap_ret.strip()
                 try:
                     _eval_ret = ast.literal_eval(_argmap_ret)
@@ -195,6 +197,9 @@ class PflacsFunc:
                             _attr_name = k
                         self._instance.add_param(_attr_name, value=v, desc="«internal»")
                         _internals[_attr_name] = v #_internals.append(_attr_name)
+                elif isinstance(_eval_ret, tuple) and isinstance(_result, tuple):
+                    print(f"_eval_ret={_eval_ret}")
+                    print(f"_result={_result}")
             #self._instance._internals = _internals
             self._instance._internals.update(_internals)
             #self._instance._externals = list(self._sig.parameters.keys())
