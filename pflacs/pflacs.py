@@ -22,7 +22,7 @@ import types
 import warnings
 logger = logging.getLogger(__name__)
 
-from vntree import NodeAttr, TreeAttr
+from vntree import NodeAttr, TreeAttr, _empty
 #from vntree import SqliteNode as VntreeNode
 from vntree import Node as VntreeNode
 
@@ -36,6 +36,11 @@ from tables import NaturalNameWarning
 warnings.simplefilter('ignore', NaturalNameWarning)  # suppress spammy pytables warning
 
 
+# # wrt: https://github.com/python/cpython/blob/3.8/Lib/inspect.py
+# class _empty:
+#     """Marker object for PflacsParam.empty"""
+
+
 class PflacsParam:
     """Descriptor class for `pflacs` parameters.
 
@@ -46,23 +51,26 @@ class PflacsParam:
     :param desc: parameter description.
     :type desc: str 
     """
+
+    empty = _empty
+
     def __init__(self, name, desc=""):
         self.name = name
         self.desc = desc
         self._access_coord = None  # just a test, get the instance coord...
     def __get__(self, instance, owner):
         if instance:
-            _val = instance.data["params"].get(self.name, None)
+            _val = instance.data["params"].get(self.name, _empty)
             # if self.access_coord is None:
             #     self.access_coord = instance._coord
             if _val and isinstance(_val, dict) and "value" in _val:
                 _val = _val["value"] 
                 # print("Parameter in node: ", instance._coord, "accessed from: ", self.access_coord)
                 # self.access_coord = None
-            if _val is None and instance.parent:
-                _val = getattr(instance.parent, self.name)
+            if _val is _empty and instance.parent:
+                _val = getattr(instance.parent, self.name, _empty)
         elif owner:
-            _val = None 
+            _val = _empty 
         return _val
     def __set__(self, instance, value):
         if self.name not in instance.data["params"]:
@@ -200,6 +208,10 @@ class PflacsFunc:
                 elif isinstance(_eval_ret, tuple) and isinstance(_result, tuple):
                     print(f"_eval_ret={_eval_ret}")
                     print(f"_result={_result}")
+                    for ii, _r in enumerate(_result):
+                        _attr_name = _eval_ret[ii]
+                        self._instance.add_param(_attr_name, value=_r, desc="«internal»")
+                        _internals[_attr_name] = _r
             #self._instance._internals = _internals
             self._instance._internals.update(_internals)
             #self._instance._externals = list(self._sig.parameters.keys())
@@ -273,7 +285,7 @@ class Premise(VntreeNode):
             return None
 
 
-    def add_param(self, name, value=None, desc="«add_param»", **kwargs):
+    def add_param(self, name, value=PflacsParam.empty, desc="", **kwargs):
         if name in self.data["params"]:
             logger.debug("add_param: {} is already param of «{}»!".format(name, self.name))
         else:
