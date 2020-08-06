@@ -10,6 +10,7 @@ import functools
 import importlib
 import inspect
 import copy
+import json
 #import os
 #import string
 import pathlib
@@ -22,9 +23,9 @@ import types
 import warnings
 logger = logging.getLogger(__name__)
 
-from vntree import NodeAttr, TreeAttr, _empty
+from vntree import NodeAttr, TreeAttr  # , _empty
 #from vntree import SqliteNode as VntreeNode
-from vntree import Node as VntreeNode
+from vntree import Node # as VntreeNode
 
 
 logger.debug("#### in pflacs.py: DEBUG this is a test  ####")
@@ -36,9 +37,24 @@ from tables import NaturalNameWarning
 warnings.simplefilter('ignore', NaturalNameWarning)  # suppress spammy pytables warning
 
 
-# # wrt: https://github.com/python/cpython/blob/3.8/Lib/inspect.py
-# class _empty:
-#     """Marker object for PflacsParam.empty"""
+# wrt: https://github.com/python/cpython/blob/3.8/Lib/inspect.py
+class _empty:
+    """Marker object for undefined value.
+    Used in pflacs: PflacsParam.empty"""
+
+# https://docs.python.org/3/library/json.html
+class PflacsEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if obj is _empty:
+            return {str(_empty):True}
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+def as_pflacs(obj):
+    if isinstance(obj, dict) and str(_empty) in obj:
+        return _empty
+    return obj
 
 
 class PflacsParam:
@@ -143,9 +159,10 @@ class PflacsFunc:
                 # if _inst_param in self._instance.params:
                 #     _xkwargs[_para.name] = self._instance.params[_inst_param]
                 if self._instance.is_param(_inst_param):
-                    #_xkwargs[_para.name] = self._instance.get_param(_inst_param)
-                    #_xkwargs[_para.name] = self._instance.params.get(_inst_param)
-                    _xkwargs[_para.name] = getattr(self._instance, _inst_param)
+                    #_xkwargs[_para.name] = getattr(self._instance, _inst_param)
+                    _val = getattr(self._instance, _inst_param)
+                    if _val is not _empty:
+                        _xkwargs[_para.name] = _val
         logger.debug("PflacsFunc.__call__: function «%s».«%s»; bind args: %s & kwargs: %s;" % (self._instance, self.name, args, _xkwargs))
         try:
             #_bound = self._sig.bind(*args, **kwargs, **_xkwargs)
@@ -218,7 +235,7 @@ class PflacsFunc:
         return _result
 
 
-class Premise(VntreeNode):
+class Premise(Node):
     """Class for creating pflacs data nodes.
 
     :class:`Premise` is a sub-class of :class:`vntree.Node`.
@@ -301,6 +318,12 @@ class Premise(VntreeNode):
         elif self.parent:
             _exists = self.parent.is_param(name)
         return _exists
+
+    def has_param(self, name):
+        _has = False
+        if name in self.data["params"]:
+            _has = True
+        return _has
 
 
     def import_params(self, params):
@@ -388,6 +411,15 @@ class Premise(VntreeNode):
                 else:
                     self.__class__(parent=self, treedict=_childdict)
 
+
+    def to_json(self, filepath=None, default=None, treemeta=False):
+        _ret = super().to_json(filepath, default, treemeta, cls=PflacsEncoder)
+        return _ret
+
+    @classmethod
+    def from_json(cls, filepath):
+        _ret = super().from_json(filepath, object_hook=as_pflacs)
+        return _ret
 
 
 class Calc(Premise):
@@ -503,9 +535,33 @@ class Calc(Premise):
                         append=append, mode="a")
     
 
+class Table(Calc):
 
+    def __init__(self, name=None, parent=None, paranames=None):
+        super().__init__(name, parent)
+        self._paranames = paranames
 
+    def __call__(self):
+        self.to_dataframe(self._paranames, False)
 
+    def to_dataframe(self, paranames=None, return_df=True):
+        """paranames is a list of the names of the dataframe columns"""
+        if paranames is None:
+            paranames = self._paranames
+        _data = {}
+        for _param in paranames:
+            _data[_param] = getattr(self, _param)
+        try:
+            self._df = pd.DataFrame(data=_data)
+        except ValueError:
+            try:
+                # https://stackoverflow.com/questions/17839973/constructing-pandas-dataframe-from-values-in-variables-gives-valueerror-if-usi
+                self._df = pd.DataFrame(data=_data, index=[0])
+            except Exception as err:
+                logger.warning("%s.to_dataframe: %s" % (self.__class__.__name__, err))
+                self._df = None
+        if return_df:
+            return self._df
 
 
 if __name__ == "__main__":
