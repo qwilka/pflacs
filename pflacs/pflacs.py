@@ -366,6 +366,17 @@ class Premise(Node):
         return desc
 
 
+    def update(self, *, calcs=True, tables=True):
+        if calcs:
+            for _n in self:
+                if type(_n) is Calc:
+                    _n()
+        if tables:
+            for _n in self:
+                if type(_n) is Table:
+                    _n()
+
+
     def plugin_func(self, func, module=None, argmap=None, newname=None):
         """Bind an external Python function as a method of a `pflacs` tree.
         """
@@ -523,6 +534,15 @@ class Calc(Premise):
     #         _child()
     #     return _child
 
+    @property
+    def df(self):
+        if self._df is None:
+            try:
+                self.to_dataframe(False)
+            except:
+                pass
+        return self._df
+
 
     def to_dataframe(self, return_df=True):
         if self._arguments and self._internals:
@@ -571,24 +591,24 @@ class Table(Calc):
             self._paranames = paranames
 
     def __call__(self):
-        self.to_dataframe(self._paranames, False)
+        self.to_dataframe(False)
     
-    @property
-    def df(self):
-        if self._df is None:
-            try:
-                self.to_dataframe(self._paranames, False)
-            except:
-                pass
-        return self._df
+    # @property
+    # def df(self):
+    #     if self._df is None:
+    #         try:
+    #             self.to_dataframe(self._paranames, False)
+    #         except:
+    #             pass
+    #     return self._df
 
 
-    def to_dataframe(self, paranames=None, return_df=True):
+    def to_dataframe(self, return_df=True):
         """paranames is a list of the names of the dataframe columns"""
-        if paranames is None:
-            paranames = self._paranames
+        # if paranames is None:
+        #     paranames = self._paranames
         _data = {}
-        for _param in paranames:
+        for _param in self._paranames:
             _data[_param] = getattr(self, _param)
         try:
             self._df = pd.DataFrame(data=_data)

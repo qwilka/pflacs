@@ -61,8 +61,18 @@ base1.add_param("CplusD", linkid=addcd._nodeid)
 table = Table("add results", parent=total, paranames=["a","b", "c", "d", "TOTAL"])
 table2 = Table("test table", parent=base1, paranames=["a","CplusD", "TOTAL"])
 
-for _n in rootnode:
-    if callable(_n):
-        _n()
+# for _n in rootnode:
+#     if callable(_n):
+#         _n()
+
+# for _n in rootnode:
+#     if type(_n) is Calc:
+#         _n()
+
+# for _n in rootnode:
+#     if type(_n) is Table:
+#         _n()
+
+rootnode.update()
 
 rootnode.savefile("ADD.vn3")
