@@ -70,29 +70,49 @@ class PflacsParam:
 
     empty = _empty
 
-    def __init__(self, name, desc=""):
+    def __init__(self, name, desc="", linkid=None):
         self.name = name
         self.desc = desc
+        self.linkid = linkid
         self._access_coord = None  # just a test, get the instance coord...
     def __get__(self, instance, owner):
-        if instance:
+        #print(f"PflacsParam.__get__ self.name={self.name} instance={instance} owner={owner}")
+        _linkid = instance.data["params"].get(self.name, {}).get("linkid", None) 
+        if _linkid and instance:
+            linkednode = instance.get_node_by_id(_linkid)
+            if linkednode is None:
+                linkednode = instance._root.get_node_by_id(_linkid)
+            if linkednode is None:
+                _val = _empty
+            else:
+                _val = linkednode.data["params"].get(self.name, _empty) 
+            if _val and isinstance(_val, dict) and "value" in _val:
+                _val = _val["value"] 
+        elif instance:
             _val = instance.data["params"].get(self.name, _empty)
             # if self.access_coord is None:
             #     self.access_coord = instance._coord
-            if _val and isinstance(_val, dict) and "value" in _val:
+            if isinstance(_val, dict) and "value" in _val:
                 _val = _val["value"] 
                 # print("Parameter in node: ", instance._coord, "accessed from: ", self.access_coord)
                 # self.access_coord = None
+            else:
+                _val = _empty
             if _val is _empty and instance.parent:
                 _val = getattr(instance.parent, self.name, _empty)
         elif owner:
             _val = _empty 
         return _val
-    def __set__(self, instance, value):
+    def __set__(self, instance, value=_empty):
         if self.name not in instance.data["params"]:
             instance.data["params"][self.name] = {}
-            instance.data["params"][self.name]["desc"] = self.desc
-        instance.data["params"][self.name]["value"] = value
+            if self.desc:
+                instance.data["params"][self.name]["desc"] = self.desc
+            if self.linkid:
+                instance.data["params"][self.name]["linkid"] = self.linkid
+                self.linkid = None
+        if value is not _empty:
+            instance.data["params"][self.name]["value"] = value
     def __delete__(self, instance):
         del instance.data["params"][self.name]
     def __set_name__(self, owner, name):  # not required: this is only called for attributes defined when the class is created
@@ -302,11 +322,15 @@ class Premise(Node):
             return None
 
 
-    def add_param(self, name, value=PflacsParam.empty, desc="", **kwargs):
+    def add_param(self, name, value=PflacsParam.empty, desc="", linkid=None, **kwargs):
         if name in self.data["params"]:
-            logger.debug("add_param: {} is already param of «{}»!".format(name, self.name))
+            logger.warning("{}.add_param: {} is already param of instance «{}»!".format(self.__class__.__name__, name, self.name))
+        elif hasattr(self.__class__, name):
+            logger.warning("{0}.add_param: {1} is already param of class «{0}»!".format(self.__class__.__name__, name))
         else:
-            setattr(self.__class__, name, PflacsParam(name, desc))
+            setattr(self.__class__, name, PflacsParam(name, desc, linkid=linkid))
+        #     #setattr(self, name, PflacsParam(name, desc, linkid=linkid))
+        #setattr(self.__class__, name, PflacsParam(name, desc, linkid=linkid))
         setattr(self, name, value)
         return True
 
@@ -537,12 +561,27 @@ class Calc(Premise):
 
 class Table(Calc):
 
-    def __init__(self, name=None, parent=None, paranames=None):
-        super().__init__(name, parent)
-        self._paranames = paranames
+    _paranames = NodeAttr()
+
+    def __init__(self, name=None, parent=None, paranames=None, 
+        treedict=None):
+        super().__init__(name, parent, treedict=treedict)
+        self._df = None
+        if paranames:
+            self._paranames = paranames
 
     def __call__(self):
         self.to_dataframe(self._paranames, False)
+    
+    @property
+    def df(self):
+        if self._df is None:
+            try:
+                self.to_dataframe(self._paranames, False)
+            except:
+                pass
+        return self._df
+
 
     def to_dataframe(self, paranames=None, return_df=True):
         """paranames is a list of the names of the dataframe columns"""
