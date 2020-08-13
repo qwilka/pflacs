@@ -35,44 +35,76 @@ rootnode = Premise("Root Node",
                 },
                 data={"desc": "Top-level parameters."},
                 vnpkl_fpath="add_tests.vn3")
+
 base1 = Premise("Base 1", parent=rootnode) 
 
 rootnode.plugin_func(addAB)
 rootnode.plugin_func(addCD, argmap={"return":"CplusD"})
 
+if False:
+    addab = Calc("Calc: addAB", parent=rootnode, 
+                    data={"desc": "First calc."},
+                    funcname="addAB") 
 
-addab = Calc("Calc: addAB", parent=rootnode, 
-                data={"desc": "First calc."},
-                funcname="addAB") 
+    addcd = Calc("Calc: addCD", parent=addab, 
+                    parameters={ 
+                        **params2, 
+                    },
+                    data={"desc": "2nd calc."},
+                    funcname="addCD") 
 
-addcd = Calc("Calc: addCD", parent=addab, 
-                parameters={ 
-                    **params2, 
-                },
-                data={"desc": "2nd calc."},
-                funcname="addCD") 
+    total = Calc("Calc: add results", parent=addcd, 
+                    data={"desc": "add results"},
+                    funcname="addAB", argmap={"a":"AplusB", "b":"CplusD", "return":"TOTAL"}) 
+    base1.add_param("TOTAL", linkid=total._nodeid)
+    base1.add_param("CplusD", linkid=addcd._nodeid)
 
-total = Calc("Calc: add results", parent=addcd, 
-                data={"desc": "add results"},
-                funcname="addAB", argmap={"a":"AplusB", "b":"CplusD", "return":"TOTAL"}) 
-base1.add_param("TOTAL", linkid=total._nodeid)
-base1.add_param("CplusD", linkid=addcd._nodeid)
+    table = Table("add results", parent=total, paranames=["a","b", "c", "d", "TOTAL"])
+    table2 = Table("test table", parent=base1, paranames=["a","CplusD", "TOTAL"])
 
-table = Table("add results", parent=total, paranames=["a","b", "c", "d", "TOTAL"])
-table2 = Table("test table", parent=base1, paranames=["a","CplusD", "TOTAL"])
+    # for _n in rootnode:
+    #     if callable(_n):
+    #         _n()
 
-# for _n in rootnode:
-#     if callable(_n):
-#         _n()
+    # for _n in rootnode:
+    #     if type(_n) is Calc:
+    #         _n()
 
-# for _n in rootnode:
-#     if type(_n) is Calc:
-#         _n()
+    # for _n in rootnode:
+    #     if type(_n) is Table:
+    #         _n()
 
-# for _n in rootnode:
-#     if type(_n) is Table:
-#         _n()
+if True:
+    a_kwargs = {"a":-10000}
+    add_branch = [
+        {"name":"a + b", "funcname":"addAB", "kwargs":a_kwargs},
+        {"name":"c + d", "funcname":"addCD", "parameters":params2},
+        {"name":"total", "funcname":"addAB", "argmap":{"a":"AplusB", "b":"CplusD", "return":"TOTAL"}}
+    ]
 
-rootnode.update()
 
-rootnode.savefile("ADD.vn3")
+
+
+    def make_calc_branch(ndata):
+        _parent = None
+        for _d in ndata:
+            _name = _d.get("name")
+            _paras = _d.get("parameters", None)
+            _funcname = _d.get("funcname", None)
+            _argmap = _d.get("argmap", None)
+            _kwargs = _d.get("kwargs", None)
+            _n = Calc(_name, _parent, parameters=_paras, funcname=_funcname,
+                argmap=_argmap, kwargs=_kwargs)
+            _parent = _n
+        return _n._root
+
+    calctree = make_calc_branch(add_branch)
+    rootnode.add_child(calctree)
+    rootnode.update()
+    ab = rootnode.find_one_node("name", value="a + b")
+    cd = rootnode.find_one_node("name", value="c + d")
+    total = rootnode.find_one_node("name", value="total")
+
+#rootnode.update()
+
+#rootnode.savefile("ADD.vn3")

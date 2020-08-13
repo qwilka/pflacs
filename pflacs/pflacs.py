@@ -482,9 +482,11 @@ class Calc(Premise):
     #_calcfuncname = NodeAttr()
     _funcname = NodeAttr()
     _argmap = NodeAttr()
+    _kwargs = NodeAttr()
 
     def __init__(self, name=None, parent=None, parameters=None,
-                data=None, treedict=None, funcname=None, argmap=None):
+                data=None, treedict=None, funcname=None, argmap=None,
+                kwargs=None):
         super().__init__(name, parent, data=data, treedict=treedict,
                         parameters=parameters)
         self._df = None
@@ -497,14 +499,19 @@ class Calc(Premise):
         #self._argmap = None
         if treedict is None or isinstance(argmap, dict):
             self._argmap = argmap
+        if treedict is None or isinstance(kwargs, dict):
+            self._kwargs = kwargs
 
 
-
-    def __call__(self, add_child=False, *args, **kwargs):
+    #def __call__(self, add_child=False, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
+        _xkwargs = self._kwargs.copy() if self._kwargs else {}
+        if kwargs:
+            _xkwargs.update(kwargs)
         if isinstance(self._funcname, str):
             _funclist = [self._funcname]
-        elif isinstance(self._funcname, (list, tuple)):
-            _funclist = self._funcname
+        # elif isinstance(self._funcname, (list, tuple)):
+        #     _funclist = self._funcname
         else:
             return False
         self._internals = {}
@@ -515,7 +522,8 @@ class Calc(Premise):
             if not callable(_func):
                 logger.error("%s.__call__: node «%s» function «%s» not callable." % (self.__class__.__name__, self.name, _func))
                 return False
-            _ret = _func(*args, **kwargs)
+            #_ret = _func(*args, **kwargs)
+            _ret = _func(*args, **_xkwargs)
             ##self._return = _ret # self._return redundant? same as self._internals
         return _ret
 
