@@ -1,6 +1,10 @@
+"""
+
+https://stackoverflow.com/questions/3172470/actual-meaning-of-shell-true-in-subprocess
+"""
 import logging
 
-from pflacs import Premise, Calc, Table
+from pflacs import Premise, Calc, Table, SubProc
 
 import numpy as np
 
@@ -41,7 +45,7 @@ base1 = Premise("Base 1", parent=rootnode)
 rootnode.plugin_func(addAB)
 rootnode.plugin_func(addCD, argmap={"return":"CplusD"})
 
-if False:
+if True:
     addab = Calc("Calc: addAB", parent=rootnode, 
                     data={"desc": "First calc."},
                     funcname="addAB") 
@@ -74,7 +78,7 @@ if False:
     #     if type(_n) is Table:
     #         _n()
 
-if True:
+if False:
     a_kwargs = {"a":-10000}
     add_branch = [
         {"name":"a + b", "funcname":"addAB", "kwargs":a_kwargs},
@@ -104,6 +108,13 @@ if True:
     ab = rootnode.find_one_node("name", value="a + b")
     cd = rootnode.find_one_node("name", value="c + d")
     total = rootnode.find_one_node("name", value="total")
+
+
+if True:
+    subp1 = SubProc("subp1", parent=rootnode, 
+                    data={"desc": "SubProc test"},
+                    kwargs={"presc1":1e3},
+                    cmd=["ls", "-l", "/home"]) 
 
 #rootnode.update()
 

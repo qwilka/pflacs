@@ -631,6 +631,12 @@ class Table(Calc):
             return self._df
 
 
+
+
+
+
+
+
 if __name__ == "__main__":
     pass
     
