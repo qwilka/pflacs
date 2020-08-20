@@ -13,3 +13,8 @@ virtual environments
 ====================
 https://github.com/pelson/conda-execute
 https://github.com/conda/conda/issues/2379  Provide a standard and fast way to execute a command inside an environment
+
+
+workflow
+==========
+https://github.com/Minyus/Python_Packages_for_Pipeline_Workflow

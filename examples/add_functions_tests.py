@@ -4,7 +4,7 @@ https://stackoverflow.com/questions/3172470/actual-meaning-of-shell-true-in-subp
 """
 import logging
 
-from pflacs import Premise, Calc, Table, SubProc
+from pflacs import Premise, Calc, Table, SubProc, PyFunc
 
 import numpy as np
 
@@ -115,6 +115,18 @@ if True:
                     data={"desc": "SubProc test"},
                     kwargs={"presc1":1e3},
                     cmd=["ls", "-l", "/home"]) 
+
+    import math
+
+    func1 = PyFunc("func1", parent=rootnode, 
+                    data={"desc": "PyFunc math.pow"},
+                    function=math.pow) 
+
+    func2 = PyFunc("func2", parent=func1, 
+                    data={"desc": "PyFunc pow"},
+                    function=pow) 
+
+    rootnode.add_param("y", 3)
 
 #rootnode.update()
 
