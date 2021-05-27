@@ -275,7 +275,7 @@ class Premise(Node):
     _return2attr = NodeAttr()
     desc = NodeAttr()
     plugins = TreeAttr()
-    #_hdf_fpath = TreeAttr("_vntree_meta")
+    #_hdf_fpath = TreeAttr("_vntreemeta")
 
     def __init__(self, name=None, parent=None, parameters=None,
                 data=None, treedict=None, vnpkl_fpath=None):
