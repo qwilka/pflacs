@@ -447,8 +447,8 @@ class Premise(Node):
                     self.__class__(parent=self, treedict=_childdict)
 
 
-    def to_json(self, filepath=None, default=None, treemeta=False):
-        _ret = super().to_json(filepath, default, treemeta, cls=PflacsEncoder)
+    def to_json(self, filepath=None, default=None, treemeta=True, dataonly=True):
+        _ret = super().to_json(filepath, default, treemeta, dataonly, cls=PflacsEncoder)
         return _ret
 
     @classmethod

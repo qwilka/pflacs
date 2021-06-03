@@ -3,13 +3,14 @@
 https://python-reference.readthedocs.io/en/latest/docs/functions/apply.html
 """
 from datetime import datetime, timezone
+import importlib
 import inspect
 import logging
 import subprocess
 
 logger = logging.getLogger(__name__)
 
-from .pflacs import Premise, NodeAttr
+from .pflacs import Premise, NodeAttr, _empty
 
 
 class PyFunc(Premise):
@@ -102,6 +103,12 @@ class PyFunc(Premise):
         _xkwargs = self._kwargs.copy() if self._kwargs else {}
         if kwargs:
             _xkwargs.update(kwargs)
+        # for _k in self._req_kwargs:
+        #     if _k in _xkwargs: continue
+        #     _xkwargs[_k] = getattr(self, _k)
+        for _k, _v in _xkwargs.items():
+            if _v is _empty:
+                _xkwargs[_k] = getattr(self, _k)
         _ret = self._function(*_args, **_xkwargs)
         return _ret
         # print(f"{self.__class__.__name__}:{self.name} args={args}")
