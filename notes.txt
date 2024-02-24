@@ -28,3 +28,9 @@ https://github.com/mrocklin/multipledispatch/
 https://coiled.io/
 https://multiple-dispatch.readthedocs.io/en/latest/design.html#types
 
+
+
+
+https://www.fluentpython.com/extra/function-introspection/
+I mention Bobo because it pioneered the use of parameter introspection to reduce boilerplate code in Python Web frameworks—since 1997! The practice is now common. FastAPI is an example of a modern framework that uses the same idea.
+
